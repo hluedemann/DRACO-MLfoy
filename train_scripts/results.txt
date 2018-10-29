@@ -1,0 +1,17 @@
+
+
+Results of different network architectures:
+
+## Singel output
+
+- No dropout + 50 epochs -> way better (50% acc)
+- No dropoutn + 3 convolutional layers + 70 epochs -> (65% acc)
+- No dropoutn + 4 convolutional layers + 70 epochs -> (75% acc)
+
+- MaxPooling results in less acc
+
+
+## One_hot output
+
+- 4 conv and 3 dens layers without dropout + 200 epochs + relu -> (76% acc)
+    -> same with sigmoid does not really work

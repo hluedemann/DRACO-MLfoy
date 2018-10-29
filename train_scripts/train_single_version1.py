@@ -30,7 +30,7 @@ cnn = CNN.CNN(
     save_path       = basedir+"/workdir/cut_custom_cnn_single",
     class_label     = "nJets",
     batch_size      = 256,
-    train_epochs    = 15,
+    train_epochs    = 50,
     optimizer       = "adam",
     loss_function   = "mean_absolute_error",
     eval_metrics    = ["mean_squared_error", "acc"] )
@@ -42,20 +42,30 @@ cnn.load_datasets()
 model = models.Sequential()
 #first layer
 model.add(
-    layer.Conv2D( 32, kernel_size = (4,4), activation = "sigmoid", padding = "same",
+    layer.Conv2D( 32, kernel_size = (4,4), activation = "relu", padding = "same",
     input_shape = cnn.train_data.input_shape ))
 model.add(
     layer.AveragePooling2D( pool_size = (4,4), padding = "same" ))
-model.add(
-    layer.Dropout(0.2))
+
 
 # second layer
 model.add(
-    layer.Conv2D( 64, kernel_size = (4,4), activation = "sigmoid", padding = "same"))
+    layer.Conv2D( 64, kernel_size = (4,4), activation = "relu", padding = "same"))
 model.add(
     layer.AveragePooling2D( pool_size = (4,4), padding = "same" ))
+
+# third layer
 model.add(
-    layer.Dropout(0.2))
+    layer.Conv2D( 128, kernel_size = (4,4), activation = "relu", padding = "same"))
+model.add(
+    layer.AveragePooling2D( pool_size = (4,4), padding = "same" ))
+
+#  layer
+model.add(
+    layer.Conv2D( 256, kernel_size = (4,4), activation = "relu", padding = "same"))
+model.add(
+    layer.AveragePooling2D( pool_size = (4,4), padding = "same" ))
+
 
 
 
@@ -64,20 +74,16 @@ model.add(
     layer.Flatten())
 model.add(
     layer.Dense( 128, activation = "relu" ))
-model.add(
-    layer.Dropout(0.5))
 
 #second dense layer
 model.add(
     layer.Dense(128, activation = "relu" ))
-model.add(
-    layer.Dropout(0.5))
+
 
 #third dense layer
 model.add(
     layer.Dense(128, activation = "relu" ))
-model.add(
-    layer.Dropout(0.5))
+
 
 
 #output layer
