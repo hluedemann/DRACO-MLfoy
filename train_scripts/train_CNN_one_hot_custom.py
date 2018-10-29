@@ -35,7 +35,7 @@ inPath = "/ceph/hluedemann/DRACO-MLfoy/workdir/train_samples/cut_train_set"
 
 cnn = CNN.CNN(
     in_path         = inPath,
-    save_path       = basedir+"/workdir/cut_custom_cnn_one_hot",
+    save_path       = basedir+"/workdir/custom_cnn_one_hot",
     class_label     = "nJets",
     batch_size      = 256,
     train_epochs    = 15,

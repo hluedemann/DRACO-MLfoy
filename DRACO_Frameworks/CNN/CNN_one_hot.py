@@ -2,6 +2,7 @@
 import keras
 import keras.models as models
 import keras.layers as layer
+from keras.callbacks import EarlyStopping
 
 from matplotlib.colors import LogNorm
 import matplotlib.pyplot as plt
@@ -56,6 +57,8 @@ class CNN():
         self.loss_function = loss_function
         # eval_metrics
         self.eval_metrics = eval_metrics
+        
+        
 
     def load_datasets(self):
         ''' load train and validation dataset '''
@@ -136,15 +139,34 @@ class CNN():
             f.write(yaml_model)
         print("saved model summary at "+str(out_file))
 
-    def train_model(self):
-        self.trained_model = self.model.fit(
-            x = self.train_data.X,
-            y = self.train_data.one_hot,
-            batch_size = self.batch_size,
-            epochs = self.train_epochs,
-            shuffle = True,
-            validation_data = (self.val_data.X, self.val_data.one_hot ))
-
+    def train_model(self, earlyStopping = False):
+        
+        if earlyStopping:
+            
+            early_stopping_monitor = EarlyStopping(monitor='val_loss', min_delta=0, patience=2, verbose=0, mode='auto', baseline=None, restore_best_weights=False)
+            
+            self.trained_model = self.model.fit(
+                x = self.train_data.X,
+                y = self.train_data.one_hot,
+                batch_size = self.batch_size,
+                epochs = self.train_epochs,
+                shuffle = True,
+                validation_data = (self.val_data.X, self.val_data.one_hot),
+                callbacks=[early_stopping_monitor])
+            
+        else:    
+            self.trained_model = self.model.fit(
+                x = self.train_data.X,
+                y = self.train_data.one_hot,
+                batch_size = self.batch_size,
+                epochs = self.train_epochs,
+                shuffle = True,
+                validation_data = (self.val_data.X, self.val_data.one_hot ))
+        
+        # get the number of epochs trained (in case of early stopping)
+        self.early_stopping_epochs = len(self.trained_model.history['loss'])
+        
+        
         # save trained model
         out_file = self.save_path +"/trained_model.h5py"
         self.model.save(out_file)
@@ -260,7 +282,7 @@ class CNN():
     def plot_metrics(self):
         ''' plot history of loss function and metrics '''
 
-        epochs = range(self.train_epochs)
+        epochs = range(self.early_stopping_epochs)
         metrics = ["loss"] + self.eval_metrics
 
         for metric in metrics:

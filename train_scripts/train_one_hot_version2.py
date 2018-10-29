@@ -96,7 +96,7 @@ model.add(
 
 
 cnn.build_model(model)
-cnn.train_model()
+cnn.train_model(earlyStopping=True)
 cnn.eval_model()
 
 # evaluate stuff
