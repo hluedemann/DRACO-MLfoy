@@ -38,7 +38,7 @@ cnn = CNN.CNN(
     save_path       = basedir+"/workdir/cut_custom_cnn_one_hot",
     class_label     = "nJets",
     batch_size      = 256,
-    train_epochs    = 50,
+    train_epochs    = 15,
     optimizer       = "adam",
     loss_function   = "categorical_crossentropy",
     eval_metrics    = ["mean_squared_error", "acc"] )
@@ -95,13 +95,17 @@ model.add(
 
 
 
+
 cnn.build_model(model)
-cnn.train_model(earlyStopping=True)
+cnn.train_model(earlyStopping=False)
 cnn.eval_model()
+
+cnn.plot_filters(0,8,4)
+cnn.plot_layer_output()
 
 # evaluate stuff
 cnn.print_classification_examples()
-#cnn.print_classification_report()
+cnn.print_classification_report()
 cnn.plot_metrics()
 cnn.plot_discriminators()
 cnn.plot_confusion_matrix()

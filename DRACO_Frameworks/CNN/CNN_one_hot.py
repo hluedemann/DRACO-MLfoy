@@ -3,13 +3,16 @@ import keras
 import keras.models as models
 import keras.layers as layer
 from keras.callbacks import EarlyStopping
+import keras.backend as K
 
+import matplotlib
 from matplotlib.colors import LogNorm
 import matplotlib.pyplot as plt
 import numpy as np
 
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
+
 
 import os
 
@@ -407,3 +410,88 @@ class CNN():
         plt.savefig(out_path)
         print("saved confusion matrix at "+str(out_path))
         plt.clf()
+
+
+
+    def plot_filters(self, num_layer, x, y):
+        ''' Plot the filters of the layer number num_layer in x by y figure '''
+        
+        filters = self.model.layers[num_layer].get_weights()
+        filters = filters[0]
+        num_filters = self.model.layers[num_layer].output_shape[3]
+        
+        if filters.size == 0:
+            print("No filters to visualize! Can only take Conv2D layers as input.")
+            return
+        
+        plt.clf()
+        fig = plt.figure()
+        
+        for j in range(num_filters):
+            ax = fig.add_subplot(y, x, j+1)
+            ax.matshow(filters[:,:,0,j], cmap = matplotlib.cm.binary)
+            plt.xticks(np.array([]))
+            plt.yticks(np.array([]))
+            
+        plt.tight_layout()
+        
+        out_path = self.save_path + "/filter_visualization.pdf"
+        plt.savefig(out_path)
+        print("saved filter visualization at " + str(out_path))
+        plt.clf()
+        
+        
+        
+        
+    def plot_layer_output(self):
+        
+        output_fn = K.function([self.model.layers[0].input], [self.model.layers[0].output])
+        
+        img = output_fn([self.train_data.X[0:1, :, :, :]])
+        img = np.array(img)
+        img = img[0,0,:,:,:]
+        
+        ## Visualize 10 images for each layer
+        
+        
+        
+        
+        
+        
+        
+        for i in range(8):
+            
+            plt.clf()
+            plt.figure()      
+            
+            output_fn = K.function([self.model.layers[0].input], [self.model.layers[i].output])
+            img = output_fn([self.train_data.X[0:1, :, :, :]])
+            img = np.array(img)
+            img = img[0,0,:,:,:]
+            
+            for j in range(12):
+                plt.subplot(3, 4, j+1)
+                plt.imshow(img[:,:,j], cmap="Greens")
+                plt.tight_layout()
+            out_path = self.save_path + "/visualize_layer" + str(i) + ".pdf"
+            print("saved layer visualization at " + str(out_path))
+            plt.savefig(out_path)
+            plt.clf()
+                
+                
+            
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
