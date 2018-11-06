@@ -413,12 +413,13 @@ class CNN():
 
 
 
-    def plot_filters(self, num_layer, x, y):
-        ''' Plot the filters of the layer number num_layer in x by y figure '''
+    def plot_filters(self, layer_number, x, y):
+        ''' Plot the filters of the layer number layer_number in a x by y figure '''
+        ''' layer_number has to ba a conv2d layer                                '''
         
-        filters = self.model.layers[num_layer].get_weights()
+        filters = self.model.layers[layer_number].get_weights()
         filters = filters[0]
-        num_filters = self.model.layers[num_layer].output_shape[3]
+        #num_filters = self.model.layers[layer_number].output_shape[3]
         
         if filters.size == 0:
             print("No filters to visualize! Can only take Conv2D layers as input.")
@@ -427,7 +428,7 @@ class CNN():
         plt.clf()
         fig = plt.figure()
         
-        for j in range(num_filters):
+        for j in range(x * y):
             ax = fig.add_subplot(y, x, j+1)
             ax.matshow(filters[:,:,0,j], cmap = matplotlib.cm.binary)
             plt.xticks(np.array([]))
@@ -435,7 +436,7 @@ class CNN():
             
         plt.tight_layout()
         
-        out_path = self.save_path + "/filter_visualization.pdf"
+        out_path = self.save_path + "/filters_layer" + str(layer_number) + ".pdf"
         plt.savefig(out_path)
         print("saved filter visualization at " + str(out_path))
         plt.clf()
@@ -443,40 +444,41 @@ class CNN():
         
         
         
-    def plot_layer_output(self):
+    def plot_layer_output(self, num_layers):
+        ''' Plot the outputs of the intermediate layers. num_layers discribes the number of     '''
+        ''' layers that should be visualized. This has to be less or equal to the number of     '''
+        ''' layers which have an image like shape as output                                      '''
         
-        output_fn = K.function([self.model.layers[0].input], [self.model.layers[0].output])
+        ## Plot the original image
+        img_org = self.train_data.X[0:1, :, :, :]
         
-        img = output_fn([self.train_data.X[0:1, :, :, :]])
-        img = np.array(img)
-        img = img[0,0,:,:,:]
-        
+        plt.clf()
+        plt.imshow(np.rollaxis(img_org.reshape(*self.test_data.input_shape[:2].T),1, 0), cmap="Greens")
+        out_path = self.save_path + "/input_image.pdf"
+        plt.savefig(out_path)
+        plt.clf()
+    
         ## Visualize 10 images for each layer
-        
-        
-        
-        
-        
-        
-        
-        for i in range(8):
+    
+        for i in range(num_layers):
             
             plt.clf()
             plt.figure()      
             
             output_fn = K.function([self.model.layers[0].input], [self.model.layers[i].output])
-            img = output_fn([self.train_data.X[0:1, :, :, :]])
+            img = output_fn([img_org])
             img = np.array(img)
             img = img[0,0,:,:,:]
             
             for j in range(12):
                 plt.subplot(3, 4, j+1)
-                plt.imshow(img[:,:,j], cmap="Greens")
+                plt.imshow(np.rollaxis(img[:,:,j], 1, 0), cmap="Greens")
                 plt.tight_layout()
             out_path = self.save_path + "/visualize_layer" + str(i) + ".pdf"
             print("saved layer visualization at " + str(out_path))
             plt.savefig(out_path)
             plt.clf()
+            plt.close("all")
                 
                 
             

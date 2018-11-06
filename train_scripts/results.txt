@@ -15,3 +15,5 @@ Results of different network architectures:
 
 - 4 conv and 3 dens layers without dropout + 200 epochs + relu -> (76% acc)
     -> same with sigmoid does not really work
+    
+- 4 conv and 3 dens layers without dropout + 20 epochs + (2,2) average pooling -> 82% acc

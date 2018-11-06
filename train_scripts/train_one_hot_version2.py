@@ -16,6 +16,7 @@ from keras.layers.core import Flatten
 from keras.layers.core import Dropout
 from keras.layers.core import Dense
 
+
 from keras.backend.tensorflow_backend import set_session
 
 # Limit the gpu memory usage
@@ -38,7 +39,7 @@ cnn = CNN.CNN(
     save_path       = basedir+"/workdir/cut_custom_cnn_one_hot",
     class_label     = "nJets",
     batch_size      = 256,
-    train_epochs    = 15,
+    train_epochs    = 20,
     optimizer       = "adam",
     loss_function   = "categorical_crossentropy",
     eval_metrics    = ["mean_squared_error", "acc"] )
@@ -51,29 +52,29 @@ cnn.load_datasets()
 model = models.Sequential()
 #first layer
 model.add(
-    layer.Conv2D( 32, kernel_size = (4,4), activation = "relu", padding = "same",
+    layer.Conv2D( 32, kernel_size = (10,10), activation = "relu", padding = "same",
     input_shape = cnn.train_data.input_shape ))
 model.add(
-    layer.AveragePooling2D( pool_size = (4,4), padding = "same" ))
+    layer.MaxPooling2D( pool_size = (2,2), padding = "same" ))
 
 
 # second layer
 model.add(
-    layer.Conv2D( 64, kernel_size = (4,4), activation = "relu", padding = "same"))
+    layer.Conv2D( 64, kernel_size = (8,8), activation = "relu", padding = "same"))
 model.add(
-    layer.AveragePooling2D( pool_size = (4,4), padding = "same" ))
+    layer.AveragePooling2D( pool_size = (2,2), padding = "same" ))
 
 # third layer
 model.add(
-    layer.Conv2D( 128, kernel_size = (4,4), activation = "relu", padding = "same"))
+    layer.Conv2D( 128, kernel_size = (6,6), activation = "relu", padding = "same"))
 model.add(
-    layer.AveragePooling2D( pool_size = (4,4), padding = "same" ))
+    layer.AveragePooling2D( pool_size = (2,2), padding = "same" ))
 
 #  layer
 model.add(
     layer.Conv2D( 256, kernel_size = (4,4), activation = "relu", padding = "same"))
 model.add(
-    layer.AveragePooling2D( pool_size = (4,4), padding = "same" ))
+    layer.AveragePooling2D( pool_size = (2,2), padding = "same" ))
 
 
 
@@ -83,9 +84,11 @@ model.add(
 model.add(
     layer.Dense( 128, activation = "relu" ))
 
+
 #second dense layer
 model.add(
     layer.Dense(128, activation = "relu" ))
+
 
 
 #third dense layer
@@ -101,7 +104,9 @@ cnn.train_model(earlyStopping=False)
 cnn.eval_model()
 
 cnn.plot_filters(0,8,4)
-cnn.plot_layer_output()
+cnn.plot_filters(2,8,4)
+
+cnn.plot_layer_output(8)
 
 # evaluate stuff
 cnn.print_classification_examples()
