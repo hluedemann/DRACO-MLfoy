@@ -84,8 +84,68 @@ class DNN():
 
     def build_default_model(self):
         ''' default Aachen-DNN model as used in the analysis '''
+        
+        number_of_input_neurons = self.data.n_input_neurons
 
-        # TODO
+        number_of_neurons_per_layer = [100,100]
+        Dropout                     = [0.7,0.7]
+        activation_function         = "relu"
+        lw_regularization_beta      = 0.0001
+    
+        # prenet
+        Inputs = layer.Input( shape = (self.data.n_input_neurons,) )
+
+        X = Inputs
+        layer_list = [X]
+        for i, nNeurons in enumerate(number_of_neurons_per_layer):
+            Dense = layer.Dense(nNeurons, activation = activation_function,
+                                kernel_regularize = keras.regularizers.l2(l2_regularization_beta),
+                                name = "Dense_"+str(i))(X)
+
+            layer_lists.append( Dense )
+            if dropout[i] != 1: 
+                X = layer.Dropout( drouput[i] )(Dense)
+        
+        X = layer.Dense(self.data.n_prenet_output_neurons,
+                activation = "sigmoid",
+                kernel_regularizer = keras.regularizers.l2(l2_regularization_beta))(X)
+        layers_list.append(X)
+
+        pre_net = models.Model(inputs = [Inputs], outputs = [X])
+        pre_net.summary()
+
+        # compile and fit here?
+
+        # Make Parameters of first model untrainable
+        for layer in first_model.layers:
+            layer.trainable = False
+
+        # ---------------
+        # main net
+        number_of_neurons_per_layer = [100, 100]
+        dropout                     = [0.7, 0.7]        
+
+        # Create Input/conc layer for second NN
+        conc_layer = layer.concatenate(layers_list, axis = -1)
+
+        Y = conc_layer
+
+        for i, nNeurons in enumerate(number_of_neurons_per_layer):
+            Y = layer.Dense(nNeurons, activation = activation_function,
+                            kernel_regularizer=keras.regularizers.l2(l2_regularization_beta),
+                            name = "Dense_main_"+str(i))(Y)
+
+            if dropout[i] != 1:
+                Y = layer.Dropout(dropout[i])(Y)
+
+        Y = layer.Dense(self.data.n_output_neurons,
+                activation = "categorical_crossentropy",
+                kernel_regularizer=keras.regularizers.l2(l2_regularization_beta))(Y)
+
+        pre_net.trainable = False
+        main_net = models.Model(inputs = [Inputs], outputs = [Y])
+        main_net.summary()
+
         return pre_net, main_net
 
 
@@ -131,11 +191,11 @@ class DNN():
     def train_models(self):
         ''' train prenet first then the main net '''
 
+        callbacks = None
         if self.early_stopping:
             callbacks = [keras.callbacks.EarlyStopping(
                             monitor = "val_loss", 
                             patience = self.early_stopping)]
-        else: callbacks = None
 
         self.trained_pre_net = self.pre_net.fit(
             x = self.data.get_train_data(as_matrix = True),
@@ -143,14 +203,14 @@ class DNN():
             batch_size = self.batch_size,
             epochs = self.train_epochs,
             shuffle = True,
-            callbacks = callbacks
-            # TODO implement cross validation
+            callbacks = callbacks,
+            validation_split=0.2,
             )
 
         # save trained model
         out_file = self.save_path = "/trained_pre_net.h5py"
         self.pre_net.save(out_file)
-        print("saved trained prenet model at "*str(out_file))
+        print("saved trained prenet model at "+str(out_file))
 
         prenet_config = self.pre_net.get_config()
         out_file = self.save_path +"/trained_pre_net_config"
@@ -165,13 +225,13 @@ class DNN():
 
         # train main net
         self.trained_main_net = self.main_net.fit(
-            x = None, # TODO implement main net input
+            x = self.data.get_train_data(as_matrix = True),
             y = self.data.get_train_labels(),
             batch_size = self.batch_size,
             epochs = self.train_epochs,
             shuffle = True,
-            callbacks = callbacks
-            # TODO implement cross validation
+            callbacks = callbacks,
+            validation_split=0.2,
             )
 
         # save trained model
@@ -190,7 +250,108 @@ class DNN():
         print("wrote trained weights to "+str(out_file))
 
 
-            
+    def eval_model(self):
+        ''' evaluate trained model '''
+
+        # prenet evaluation
+        self.prenet_eval = self.pre_net.evaluate(
+            self.data.get_test_data(as_matrix = True))
+        print("prenet test loss: {}".format(self.prenet_eval[0]))
+        for im, metric in enumerate(self.eval_metrics):
+            print("prenet test {}: {}".format(metric, self.test_eval[im+1]))
+
+        self.prenet_history = self.trained_pre_net.history
+
+        self.prenet_predicted_vector = self.pre_net.predict( self.data.get_test_data(as_matrix = True) )
+
+
+        # main net evaluation
+        self.mainnet_eval = self.main_net.evaluate(
+            x = self.data.get_test_data(as_matrix = True)
+            )
+        print("mainnet test loss: {}".format(self.mainnet_eval[0]))
+        for im, metric in enumerate(self.eval_metrics):
+            print("mainnet test {}: {}".format(metric, self. test_eval[im+1]))
+
+        self.mainnet_history = self.trained_main_net.history
+
+        self.mainnet_predicted_vector = self.main_net.predict() # TODO implement main net input
+
+        self.predicted_classes = np.argmax( self.mainnet_predicted_vector, axis = 1)
+    
+        self.confusion_matrix = confusion_matrix(
+            self.get_test_labels(), self.predicted_classes)
+
+        
+
+    # --------------------------------------------------------------------
+    # result plotting functions
+    # --------------------------------------------------------------------
+
+    def plot_metrics(self):
+        ''' plot history of loss function and evaluation metrics '''
+
+
+        metrics = ["loss"]+self.eval_metrics
+
+        for metric in metrics:
+            # prenet plot
+            plt.clf()
+            train_history = self.prenet_history[metric]
+            val_history = self.prenet_history["val_"+metric]
+
+            n_epochs = len(train_history)
+            epochs = np.arange(1,n_epochs+1,1)
+
+            plt.plot(epochs, train_history, "b-", label = "train", lw = 2)
+            plt.plot(epochs, val_history, "r-", label = "validation", lw = 2)
+            plt.title("train and validation "+str(metric)+" of prenet")
+
+            plt.grid()
+            plt.xlabel("epoch")
+            plt.ylabel(metric)
+
+            plt.legend()
+
+            out_path = self.save_path + "/prenet_history_"+str(metric)+".pdf"
+            plt.savefig(out_path)
+            print("saved plot of "+str(metric)+" at "+str(out_path))
+
+            # main net
+            plt.clf()
+            train_history = self.mainnet_history[metric]
+            val_history = self.mainnet_history["val_"+metric]
+
+            n_epochs = len(train_history)
+            epochs = np.arange(1,n_epochs+1,1)
+
+            plt.plot(epochs, train_history, "b-", label = "train", lw = 2)
+            plt.plot(epochs, val_history, "r-", label = "validation", lw = 2)
+            plt.title("train and validation "+str(metric)+" of mainnet")
+
+            plt.grid()
+            plt.xlabel("epoch")
+            plt.ylabel(metric)
+
+            plt.legend()
+
+            out_path = self.save_path + "/mainnet_history_"+str(metric)+".pdf"
+            plt.savefig(out_path)
+            print("saved plot of "+str(metric)+" at "+str(out_path))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
