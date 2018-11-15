@@ -37,11 +37,14 @@ class DataFrame(object):
             print("number of events after selections:  "+str(cls_df.shape[0]))
 
             # add event weight
-            weights = cls_df["Weight_XS"].values
-            weight_sum = sum(weights)
-            # sum of weights per class normed to 1
-            cls_df["train_weight"] = pd.Series( [w/weight_sum for w in weights], index = cls_df.index )
+            cls_df = cls_df.assign(total_weight = lambda x: x.Weight_XS * x.Weight_CSV * x.Weight_GEN_nom)
             
+            weight_sum = sum(cls_df["total_weight"].values)
+            class_weight_scale = 1.
+            if "ttH" in cls: class_weight_scale *= 1.0
+            cls_df = cls_df.assign(train_weight = lambda x: class_weight_scale*x.total_weight/weight_sum)
+            print("weight sum of train_weight: "+str( sum(cls_df["train_weight"].values) ))
+
             # add data to list of dataframes
             class_dataframes.append( cls_df )
             print("-"*50)
@@ -49,6 +52,17 @@ class DataFrame(object):
         # concatenating all dataframes
         df = pd.concat( class_dataframes )
         del class_dataframes
+
+        # add class_label translation
+        index = 0
+        self.class_translation = {}
+        for cls in classes:
+            self.class_translation[cls] = index
+            index += 1
+        self.classes = classes
+        self.index_classes = [self.class_translation[c] for c in classes]
+
+        df["index_label"] = pd.Series( [self.class_translation[c] for c in df["class_label"].values], index = df.index )
 
         # norm weights to mean(1)
         df["train_weight"] = df["train_weight"]*df.shape[0]/len(classes)
@@ -62,6 +76,7 @@ class DataFrame(object):
         df = shuffle(df)
 
         # norm variables if wanted
+        unnormed_df = df
         if norm_variables:
             df[train_variables] = (df[train_variables] - df[train_variables].mean())/df[train_variables].std()
 
@@ -69,6 +84,7 @@ class DataFrame(object):
         n_test_samples = int( df.shape[0]*test_percentage )
         self.df_test = df.head(n_test_samples)
         self.df_train = df.tail(df.shape[0] - n_test_samples )
+        self.df_test_unnormed = unnormed_df.head(n_test_samples)
         del df
 
         # save variable lists
@@ -84,22 +100,25 @@ class DataFrame(object):
     def get_train_weights(self):
         return self.df_train["train_weight"].values
 
-    def get_train_labels(self):
-        return to_categorical( self.df_train["class_label"].values )      
+    def get_train_labels(self, as_categorical = True):
+        if as_categorical: return to_categorical( self.df_train["index_label"].values )      
+        else:              return self.df_train["index_label"].values
 
     def get_prenet_train_labels(self):
         return self.df_train[ self.prenet_targets ].values
         
     # test data ------------------------------------
-    def get_test_data(self, as_matrix = True):
-        if as_matrix: return self.df_test[ self.train_variables ].values
-        else:         return self.df_test[ self.train_variables ]
+    def get_test_data(self, as_matrix = True, normed = True):
+        if not normed: return self.df_test_unnormed[ self.train_variables ]
+        if as_matrix:  return self.df_test[ self.train_variables ].values
+        else:          return self.df_test[ self.train_variables ]
 
     def get_test_weights(self):
-        return self.df_test["train_weight"].values
+        return self.df_test["total_weight"].values
 
-    def get_test_labels(self):
-        return to_categorical( self.df_test["class_label"].values )      
+    def get_test_labels(self, as_categorical = True):
+        if as_categorical: return to_categorical( self.df_test["index_label"].values )
+        else:              return self.df_test["index_label"].values
 
     def get_prenet_test_labels(self, as_matrix = True):
         return self.df_test[ self.prenet_targets ].values
