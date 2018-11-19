@@ -11,14 +11,16 @@ import os
 import numpy as np
 import rootpy.plotting as rp
 
+lumi = 41.3
+
 categories = {
-    "(N_Jets == 6 and N_BTagsM >= 3)": variable_info.variables_4j_3b,
+    "(N_Jets >= 6 and N_BTagsM >= 3)": variable_info.variables_4j_3b,
     "(N_Jets == 5 and N_BTagsM >= 3)": variable_info.variables_5j_3b,
     "(N_Jets == 4 and N_BTagsM >= 3)": variable_info.variables_6j_3b,
     }
 
 category_names = {
-    "(N_Jets == 6 and N_BTagsM >= 3)": "6j_ge3t",
+    "(N_Jets >= 6 and N_BTagsM >= 3)": "ge6j_ge3t",
     "(N_Jets == 5 and N_BTagsM >= 3)": "5j_ge3t",
     "(N_Jets == 4 and N_BTagsM >= 3)": "4j_ge3t",
     }
@@ -47,16 +49,19 @@ def hist_variable(variable, plot_name, bkgs, sigs, plt_title, log = False):
     weight_integral = 0
     # loop over backgrounds and fill hists
     for key in ordered_bkgs:
-        weight_integral += sum(bkgs[key]["weight"].values)
+        weights = bkgs[key]["weight"].values
+        weight_integral += sum(weights)
         hist = rp.Hist( bins, *bin_range, title = key)
         ps.set_bkg_hist_style(hist, key)
         hist.fill_array(
             bkgs[key][variable].values, 
-            bkgs[key]["weight"].values )
+            weights )
     
         bkg_hists.append( hist )
 
-    bkg_stack = rp.HistStack( bkg_hists, stacked = True , drawstyle ="HIST E1 X0")
+    bkg_stack = rp.HistStack( bkg_hists, stacked = True , drawstyle ="HIST E2 X0")
+    max_val = bkg_stack.GetMaximum()*1.2
+    bkg_stack.SetMaximum(max_val)
     bkg_stack.SetMinimum(1e-4)
 
 
@@ -86,6 +91,10 @@ def hist_variable(variable, plot_name, bkgs, sigs, plt_title, log = False):
     # add legend
     legend = ps.init_legend( bkg_hists+[sig_hist] )
 
+    # add titles
+    ps.add_lumi(canvas)
+    ps.add_category_label(canvas, plt_title)
+
     # save plot
     if log: plot_name = plot_name.replace(".pdf","_log.pdf")
     ps.save_canvas(canvas, plot_name)
@@ -97,27 +106,27 @@ for key in signals:
     print("loading signal "+str(signals[key]))
     with pandas.HDFStore( signals[key], mode = "r" ) as store:
         df = store.select("data")
-        sig_dfs[key] = df.assign(weight = lambda x: x.Weight_XS*x.Weight_CSV*x.Weight_GEN_nom)
+        sig_dfs[key] = df.assign(weight = lambda x: x.Weight_XS*x.Weight_GEN_nom*lumi)
         
 for key in backgrounds:
     print("loading backgroud "+str(backgrounds[key]))
     with pandas.HDFStore( backgrounds[key], mode = "r" ) as store:
         df = store.select("data")
-        bkg_dfs[key] = df.assign(weight = lambda x: x.Weight_XS*x.Weight_CSV*x.Weight_GEN_nom)
+        bkg_dfs[key] = df.assign(weight = lambda x: x.Weight_XS*x.Weight_GEN_nom*lumi)
 
 add_vars = [
-    "GenAdd_BB_inacceptance",
-    "GenAdd_B_inacceptance",
+    #"GenAdd_BB_inacceptance",
+    #"GenAdd_B_inacceptance",
     "GenHiggs_BB_inacceptance",
     "GenHiggs_B_inacceptance",
-    "GenTopHad_B_inacceptance",
-    "GenTopHad_QQ_inacceptance",
-    "GenTopHad_Q_inacceptance",
-    "GenTopLep_B_inacceptance",
-    "Weight_XS",
-    "Weight_CSV",
-    "Weight_GEN_nom"]
-
+    #"GenTopHad_B_inacceptance",
+    #"GenTopHad_QQ_inacceptance",
+    #"GenTopHad_Q_inacceptance",
+    #"GenTopLep_B_inacceptance",
+    #"Weight_XS",
+    #"Weight_CSV",
+    #"Weight_GEN_nom"
+    ]
 # loop over categories and get list of variables
 for cat in categories:
     print("starting with category "+str(cat))

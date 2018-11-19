@@ -2,6 +2,7 @@
 import keras
 import keras.models as models
 import keras.layers as layer
+from keras import backend as K
 import matplotlib
 matplotlib.use('Agg')
 from matplotlib.colors import LogNorm
@@ -77,7 +78,10 @@ class DNN():
         self.eval_metrics = eval_metrics
 
         # load dataset
-        self.data= self._load_datasets()
+        self.data = self._load_datasets()
+        out_file = self.save_path+"/variable_norm.csv"
+        self.data.norm_csv.to_csv(out_file)
+        print("saved variable norms at "+str(out_file))
 
         # dict with aachen architectures for sl analysis
         architecture_1 = architecture()
@@ -100,8 +104,10 @@ class DNN():
             test_percentage     = self.test_percentage,
             norm_variables      = True)
 
+
     def build_default_model(self):
         ''' default Aachen-DNN model as used in the analysis '''
+        K.set_learning_phase(True)
 
         number_of_input_neurons = self.data.n_input_neurons
 
@@ -111,7 +117,7 @@ class DNN():
         l2_regularization_beta      = self.architecture_dic["L2_Norm"]
     
         # build pre net ===========================================================================
-        Inputs = keras.layers.Input( shape = (self.data.n_input_neurons,) )
+        Inputs = keras.layers.Input( shape = (self.data.n_input_neurons,),name="input" )
 
         X = Inputs
         self.layer_list = [X]
@@ -170,7 +176,8 @@ class DNN():
         Y = keras.layers.Dense(
             self.data.n_output_neurons,
             activation = "softmax",
-            kernel_regularizer = keras.regularizers.l2(l2_regularization_beta)
+            kernel_regularizer = keras.regularizers.l2(l2_regularization_beta),
+	        name = "output"
             )(Y)
 
         # define model
@@ -204,7 +211,7 @@ class DNN():
 
         # compile main net
         main_net.compile(
-            loss = self.loss_function,#"kullback_leibler_divergence",#self.loss_function,
+            loss = "kullback_leibler_divergence",#self.loss_function,
             optimizer = self.optimizer,
             metrics = self.eval_metrics)
             
@@ -230,6 +237,12 @@ class DNN():
 
     def train_models(self):
         ''' train prenet first then the main net '''
+        
+        # checkpoint files
+        cp_path = self.save_path + "/checkpoints/"
+        if not os.path.exists(cp_path):
+            os.makedirs(cp_path)
+
 
         # add early stopping if activated
         callbacks = None
@@ -254,17 +267,17 @@ class DNN():
             layer.trainable = False
 
         # save trained prenet model
-        out_file = self.save_path + "/trained_pre_net.h5py"
+        out_file = cp_path + "/trained_pre_net.h5py"
         self.pre_net.save(out_file)
         print("saved trained prenet model at "+str(out_file))
 
         prenet_config = self.pre_net.get_config()
-        out_file = self.save_path +"/trained_pre_net_config"
+        out_file = cp_path +"/trained_pre_net_config"
         with open(out_file, "w") as f:
             f.write( str(prenet_config))
         print("saved prenet model config at "+str(out_file))
 
-        out_file = self.save_path +"/trained_pre_net_weights.h5"
+        out_file = cp_path +"/trained_pre_net_weights.h5"
         self.pre_net.save_weights(out_file)
         print("wrote trained prenet weights to "+str(out_file))
 
@@ -281,19 +294,39 @@ class DNN():
             )
 
         # save trained model
-        out_file = self.save_path + "/trained_main_net.h5py"
+        out_file = cp_path + "/trained_main_net.h5py"
         self.main_net.save(out_file)
         print("saved trained model at "+str(out_file))
 
         mainnet_config = self.main_net.get_config()
-        out_file = self.save_path + "/trained_main_net_config"
+        out_file = cp_path + "/trained_main_net_config"
         with open(out_file, "w") as f:
             f.write( str(mainnet_config))
         print("saved model config at "+str(out_file))
 
-        out_file = self.save_path +"/trained_main_net_weights.h5"
+        out_file = cp_path +"/trained_main_net_weights.h5"
         self.main_net.save_weights(out_file)
         print("wrote trained weights to "+str(out_file))
+
+        # set model as non trainable
+        for layer in self.pre_net.layers:
+            layer.trainable = False
+        self.pre_net.trainable = False
+
+        for layer in self.main_net.layers:
+            layer.trainable = False
+        self.main_net.trainable = False
+ 
+        K.set_learning_phase(False)
+       
+        self.main_net.summary()
+
+        out_file = cp_path + "/trained_main_net"
+        sess = keras.backend.get_session()
+        saver = tf.train.Saver()
+        save_path = saver.save(sess, out_file)
+        print("saved checkpoint files to "+str(out_file))
+
 
     def eval_model(self):
         ''' evaluate trained model '''
