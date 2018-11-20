@@ -16,6 +16,7 @@ from keras.layers.core import Flatten
 from keras.layers.core import Dropout
 from keras.layers.core import Dense
 
+import keras.backend as K
 
 from keras.backend.tensorflow_backend import set_session
 
@@ -32,14 +33,16 @@ import DRACO_Frameworks.CNN.CNN_one_hot as CNN
 
 
 #inPath = "/storage/c/vanderlinden/DRACO-MLfoy/workdir/train_samples/base_train_set"
-inPath = "/ceph/hluedemann/DRACO-MLfoy/workdir/train_samples/cut_train_set"
+inPath = "/ceph/hluedemann/DRACO-MLfoy/workdir/train_samples/cnn_train_set_version1"
+#inPath = "/ceph/hluedemann/DRACO-MLfoy/workdir/train_samples/cut_train_set"
+
 
 cnn = CNN.CNN(
     in_path         = inPath,
     save_path       = basedir+"/workdir/cut_custom_cnn_one_hot",
     class_label     = "nJets",
     batch_size      = 256,
-    train_epochs    = 20,
+    train_epochs    = 1,
     optimizer       = "adam",
     loss_function   = "categorical_crossentropy",
     eval_metrics    = ["mean_squared_error", "acc"] )
@@ -55,26 +58,27 @@ model.add(
     layer.Conv2D( 32, kernel_size = (10,10), activation = "relu", padding = "same",
     input_shape = cnn.train_data.input_shape ))
 model.add(
-    layer.MaxPooling2D( pool_size = (2,2), padding = "same" ))
+    layer.AveragePooling2D( pool_size = (2,2), padding = "same" ))
 
 
 # second layer
 model.add(
-    layer.Conv2D( 64, kernel_size = (8,8), activation = "relu", padding = "same"))
+    layer.Conv2D( 64, kernel_size = (10,10), activation = "relu", padding = "same"))
 model.add(
     layer.AveragePooling2D( pool_size = (2,2), padding = "same" ))
 
 # third layer
 model.add(
-    layer.Conv2D( 128, kernel_size = (6,6), activation = "relu", padding = "same"))
+    layer.Conv2D( 128, kernel_size = (10,10), activation = "relu", padding = "same"))
 model.add(
     layer.AveragePooling2D( pool_size = (2,2), padding = "same" ))
 
 #  layer
 model.add(
-    layer.Conv2D( 256, kernel_size = (4,4), activation = "relu", padding = "same"))
+    layer.Conv2D( 256, kernel_size = (10,10), activation = "relu", padding = "same"))
 model.add(
     layer.AveragePooling2D( pool_size = (2,2), padding = "same" ))
+
 
 
 
@@ -82,13 +86,15 @@ model.add(
 model.add(
     layer.Flatten())
 model.add(
-    layer.Dense( 128, activation = "relu" ))
-
+    layer.Dense(128, activation = "relu" ))
+model.add(
+            layer.Dropout(0.5))
 
 #second dense layer
 model.add(
     layer.Dense(128, activation = "relu" ))
-
+model.add(
+            layer.Dropout(0.5))
 
 
 #third dense layer
@@ -105,6 +111,8 @@ cnn.eval_model()
 
 cnn.plot_filters(0,8,4)
 cnn.plot_filters(2,8,4)
+cnn.plot_filters(4,8,4)
+cnn.plot_filters(6,8,4)
 
 cnn.plot_layer_output(8)
 
@@ -114,10 +122,3 @@ cnn.print_classification_report()
 cnn.plot_metrics()
 cnn.plot_discriminators()
 cnn.plot_confusion_matrix()
-
-
-
-
-
-
-

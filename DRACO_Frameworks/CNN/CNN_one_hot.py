@@ -368,6 +368,8 @@ class CNN():
         plt.clf()
         plt.figure( figsize = (1.5*self.num_classes, 1.5*self.num_classes) )
         
+        matplotlib.rcParams.update({'font.size': 22}) 
+        
         minimum = np.min( self.confusion_matrix ) /(np.pi**2.0 * np.exp(1.0)**2.0)
         maximum = np.max( self.confusion_matrix ) *(np.pi**2.0 * np.exp(1.0)**2.0)
 
@@ -403,7 +405,7 @@ class CNN():
         plt_axis.set_yticklabels(self.target_names)
 
         plt_axis.set_aspect("equal")
-
+        plt.title("Confusion Matrix")
         plt.tight_layout()
 
         out_path = self.save_path+"/confusion_matrix.pdf"
@@ -427,6 +429,7 @@ class CNN():
         
         plt.clf()
         fig = plt.figure()
+        fig.suptitle('Visualization of the filters from layer {}'.format(layer_number), fontsize=16)
         
         for j in range(x * y):
             ax = fig.add_subplot(y, x, j+1)
@@ -450,28 +453,37 @@ class CNN():
         ''' layers which have an image like shape as output                                      '''
         
         ## Plot the original image
-        img_org = self.train_data.X[0:1, :, :, :]
+        img_org = self.test_data.X[0:1, :, :, :]
+        label = self.test_data.inverted_label_dict[self.test_data.Y[0]]
+        
         
         plt.clf()
+        plt.figure()
+        plt.title('Input image')
+        plt.xlabel('eta')
+        plt.ylabel('phi')
         plt.imshow(np.rollaxis(img_org.reshape(*self.test_data.input_shape[:2].T),1, 0), cmap="Greens")
         out_path = self.save_path + "/input_image.pdf"
         plt.savefig(out_path)
         plt.clf()
     
-        ## Visualize 10 images for each layer
+        ## Visualize 12 images for each layer
     
         for i in range(num_layers):
             
             plt.clf()
-            plt.figure()      
-            
+            plt.figure(figsize = [5,5])      
+            plt.suptitle("Output of layer {} ({})".format(i, label))
             output_fn = K.function([self.model.layers[0].input], [self.model.layers[i].output])
             img = output_fn([img_org])
             img = np.array(img)
             img = img[0,0,:,:,:]
+        
             
             for j in range(12):
                 plt.subplot(3, 4, j+1)
+                plt.xlabel('eta')
+                plt.ylabel('phi')
                 plt.imshow(np.rollaxis(img[:,:,j], 1, 0), cmap="Greens")
                 plt.tight_layout()
             out_path = self.save_path + "/visualize_layer" + str(i) + ".pdf"
@@ -484,8 +496,7 @@ class CNN():
             
         
         
-        
-        
+
         
         
         
