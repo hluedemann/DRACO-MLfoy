@@ -3,8 +3,8 @@ from keras.utils import to_categorical
 import numpy as np
 
 class DataFrame( object ):
-    def __init__(self, path_to_input_file, output_label = "class_label", 
-                one_hot = True, phi_padding = None):
+    def __init__(self, path_to_input_file, output_label = "class_label",
+                one_hot = True, phi_padding = None, detecction=False):
         print("-"*40)
         print("loading data from "+str(path_to_input_file))
         with pd.HDFStore( path_to_input_file, mode = "r") as store:
@@ -18,6 +18,8 @@ class DataFrame( object ):
         print("size of input image: "+str(self.input_size))
         self.n_events           = df.shape[0]
         print("extracted number of events: "+str(self.n_events))
+
+        self.num_classes = 1
 
         # output labels
         print("chose '"+str(output_label)+"' as label for output classes")
@@ -42,7 +44,7 @@ class DataFrame( object ):
         label_dict = label_dict.to_dict('list')
         for key in label_dict:
             label_dict[key] = label_dict[key][0]
-        
+
         if output_label == "class_label":
             # chose event type as classification goal
             self.inverted_label_dict = {val: key for key, val in label_dict.items()}
@@ -61,8 +63,8 @@ class DataFrame( object ):
             # padding in phi plane
             # add rows to top and bottom of image in the phi coordinate
             # representing the rotational dimension of phi
-            self.X = np.concatenate( 
-                (self.X[:,:,-phi_padding:], self.X, self.X[:,:,:phi_padding]), 
+            self.X = np.concatenate(
+                (self.X[:,:,-phi_padding:], self.X, self.X[:,:,:phi_padding]),
                 axis = 2)
             print("data shape after padding: {}".format(self.X.shape))
 
@@ -73,7 +75,3 @@ class DataFrame( object ):
             print("image size after padding: {}".format(self.image_size))
 
         print("-"*40)
-
-
-
-
