@@ -6,8 +6,8 @@ from keras.utils import to_categorical
 import matplotlib.pyplot as plt
 
 class DataFrame(object):
-    def __init__(self, path_to_input_files, 
-                classes, event_category, 
+    def __init__(self, path_to_input_files,
+                classes, event_category,
                 train_variables, prenet_targets,
                 test_percentage = 0.1,
                 norm_variables = False,
@@ -21,7 +21,7 @@ class DataFrame(object):
             the dataset is shuffled and split into a test and train sample
                 according to test_percentage
             for better training, the variables can be normed to std(1) and mu(0) '''
-        
+
         # loop over all classes and extract data as well as event weights
         class_dataframes = list()
         for cls in classes:
@@ -40,7 +40,7 @@ class DataFrame(object):
 
             # add event weight
             cls_df = cls_df.assign(total_weight = lambda x: x.Weight_XS * x.Weight_CSV * x.Weight_GEN_nom)
-            
+
             weight_sum = sum(cls_df["total_weight"].values)
             class_weight_scale = 1.
             if "ttH" in cls: class_weight_scale *= 1.0
@@ -122,12 +122,12 @@ class DataFrame(object):
         return self.df_train["train_weight"].values
 
     def get_train_labels(self, as_categorical = True):
-        if as_categorical: return to_categorical( self.df_train["index_label"].values )      
+        if as_categorical: return to_categorical( self.df_train["index_label"].values )
         else:              return self.df_train["index_label"].values
 
     def get_prenet_train_labels(self):
         return self.df_train[ self.prenet_targets ].values
-        
+
     # test data ------------------------------------
     def get_test_data(self, as_matrix = True, normed = True):
         if not normed: return self.df_test_unnormed[ self.train_variables ]
@@ -137,7 +137,7 @@ class DataFrame(object):
     def get_test_weights(self):
         return self.df_test["total_weight"].values
     def get_lumi_weights(self):
-        return self.df_test["lumi_weight"].values 
+        return self.df_test["lumi_weight"].values
 
     def get_test_labels(self, as_categorical = True):
         if as_categorical: return to_categorical( self.df_test["index_label"].values )
@@ -152,5 +152,3 @@ class DataFrame(object):
     # full sample ----------------------------------
     def get_full_df(self):
         return self.unsplit_df[self.train_variables]
-
-

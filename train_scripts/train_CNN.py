@@ -10,8 +10,9 @@ basedir = os.path.dirname(filedir)
 sys.path.append(basedir)
 
 #import DRACO_Frameworks.CNN.CNN as CNN
-from DRACO_Frameworks import *
-import DRACO_Frameworks.DNN_Aachen.variable_info as variable_info
+import DRACO_Frameworks.CNN.data_frame
+import DRACO_Frameworks.CNN.CNN as CNN
+import DRACO_Frameworks.CNN.variable_info as variable_info
 
 category_vars = {
     "4j_ge3t": variable_info.variables_4j_3b,
@@ -38,12 +39,12 @@ event_classes = ["ttHbb", "ttbb", "tt2b", "ttb", "ttcc", "ttlf"]
 if "naf" in socket.gethostname():
     workpath = "/nfs/dust/cms/user/luedeman/DRACO-MLfoy/workdir/"
 else:
-    workpath = "/ceph/hluedemann/DRACO-MLfoy/workdir/"
+    workpath = "/ceph/hluedemann/DRACO-MLfoy/workdir"
 
 key = sys.argv[1]
 
-inPath   = workpath + "train_samples"
-savepath = workpath + "/CNN"+str(key)+"/"
+inPath   = workpath + "/train_samples"
+savepath = workpath + "/CNN"+str(key)+""
 
 
 cnn = CNN.CNN(
@@ -52,22 +53,28 @@ cnn = CNN.CNN(
     event_classes       = event_classes,
     event_category      = categories[key],
     train_variables     = category_vars[key],
-    prenet_targets      = prenet_targets,
-    train_epochs        = 500,
-    early_stopping      = 20,
-    eval_metrics        = ["acc"],
-    test_percentage     = 0.2)
+    train_epochs        = 20,
+    early_stopping      = 5,
+    optimizer           = "adam",
+    test_percentage     = 0.2,
+    eval_metrics        = ["acc"]
+    )
 
-'''
+
 cnn.build_model()
+
 cnn.train_models()
+
 cnn.eval_model()
+
 cnn.plot_metrics()
+cnn.plot_confusion_matrix(norm_matrix = False)
+'''
 cnn.plot_prenet_nodes()
 cnn.plot_class_differences()
 cnn.plot_discriminators()
 cnn.plot_classification()
-cnn.plot_confusion_matrix()
+
 cnn.plot_output_output_correlation(plot=True)
 cnn.plot_input_output_correlation(plot=False)
 '''
