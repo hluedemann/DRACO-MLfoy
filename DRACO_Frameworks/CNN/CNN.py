@@ -7,6 +7,14 @@ from keras import backend as K
 from keras.backend.tensorflow_backend import set_session
 import tensorflow as tf
 
+from keras.layers.normalization import BatchNormalization
+from keras.layers.convolutional import Conv2D
+from keras.layers.convolutional import AveragePooling2D
+from keras.layers.core import Activation
+from keras.layers.core import Flatten
+from keras.layers.core import Dropout
+from keras.layers.core import Dense
+
 # Limit gpu usage
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
@@ -174,44 +182,31 @@ class CNN():
         ''' default Aachen-DNN model as used in the analysis '''
         model = models.Sequential()
 
-        print(self.data.size_input_image)
-        # input layer
-        model.add(
-            layer.Conv2D( 32, kernel_size = (4,4), activation = "linear", padding = "same",
-            input_shape = self.data.size_input_image ))
-        model.add(
-            layer.AveragePooling2D( pool_size = (2,2), padding = "same" ))
-        model.add(
-            layer.Dropout(0.5))
+        # CONV -> RELU -> POOL
+        model.add(Conv2D(32, (4, 4), padding="same", input_shape = self.data.size_input_image))
+        model.add(Activation("relu"))
+        model.add(AveragePooling2D(pool_size=(4,4)))
 
-        # second layer
-        model.add(
-            layer.Conv2D( 64, kernel_size = (4,4), activation = "linear", padding = "same"))
-        model.add(
-            layer.AveragePooling2D( pool_size = (2,2), padding = "same" ))
-        model.add(
-            layer.Dropout(0.5))
 
-        # third layer
-        model.add(
-            layer.Conv2D( 256, kernel_size = (3,3), activation = "linear", padding = "same"))
-        model.add(
-            layer.MaxPooling2D( pool_size = (2,2), padding = "same" ))
-        model.add(
-            layer.Dropout(0.5))
+        # (CONV => RELU) * 2 => POOL
+        model.add(Conv2D(64, (4, 4), padding="same"))
+        model.add(Activation("relu"))
+        model.add(Conv2D(64, (4, 4), padding="same"))
+        model.add(Activation("relu"))
+        model.add(AveragePooling2D(pool_size=(3, 3)))
 
-        # dense layer
-        model.add(
-            layer.Flatten())
-        model.add(
-            layer.Dense( 128, activation = "sigmoid" ))
-        model.add(
-            layer.Dropout(0.5))
 
-        # output
-        model.add(
-        layer.Dense( self.data.n_output_neurons, activation = "softmax" ))
 
+        # first (and only) set of FC => RELU layers
+        model.add(Flatten())
+        model.add(Dense(512))
+        model.add(Activation("relu"))
+        model.add(BatchNormalization())
+
+
+        # softmax classifier
+        model.add(Dense(self.data.n_output_neurons))
+        model.add(Activation("softmax"))
         return model
 
 
@@ -265,7 +260,7 @@ class CNN():
         self.trained_main_net = self.main_net.fit(
             x = self.data.get_train_data_cnn(as_matrix = True),
             y = self.data.get_train_labels(),
-            batch_size = 1000,
+            batch_size = self.batch_size,
             epochs = self.train_epochs,
             shuffle = True,
             callbacks = callbacks,
@@ -319,9 +314,6 @@ class CNN():
             print("mainnet test loss: {}".format(self.mainnet_eval[0]))
             for im, metric in enumerate(self.eval_metrics):
                 print("mainnet test {}: {}".format(metric, self.mainnet_eval[im+1]))
-
-
-
 
 
 

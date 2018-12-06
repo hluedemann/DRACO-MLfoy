@@ -53,7 +53,7 @@ cnn = CNN.CNN(
     event_classes       = event_classes,
     event_category      = categories[key],
     train_variables     = category_vars[key],
-    train_epochs        = 20,
+    train_epochs        = 10,
     early_stopping      = 5,
     optimizer           = "adam",
     test_percentage     = 0.2,
@@ -68,7 +68,7 @@ cnn.train_models()
 cnn.eval_model()
 
 cnn.plot_metrics()
-cnn.plot_confusion_matrix(norm_matrix = False)
+cnn.plot_confusion_matrix(norm_matrix = True)
 '''
 cnn.plot_prenet_nodes()
 cnn.plot_class_differences()

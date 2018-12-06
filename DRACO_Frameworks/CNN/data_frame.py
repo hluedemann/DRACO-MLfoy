@@ -85,7 +85,6 @@ class DataFrame(object):
         df["train_weight"] = df["train_weight"]*df.shape[0]/len(classes)
         #df["train_weight"] = df["train_weight"]*df.shape[0]/len(classes)
 
-
         # save some meta data about net
         self.n_input_neurons = len(train_variables)
         self.n_output_neurons = len(classes)
@@ -94,9 +93,9 @@ class DataFrame(object):
         # shuffle dataframe
         df = shuffle(df)
         # norm variables if wanted
-        '''
-        unnormed_df = df.copy()
 
+        unnormed_df = df.copy()
+        '''
         if norm_variables:
             norm_csv = pd.DataFrame(index=train_variables, columns=["mu", "std"])
             for v in train_variables:
@@ -105,11 +104,6 @@ class DataFrame(object):
             df[train_variables] = (df[train_variables] - df[train_variables].mean())/df[train_variables].std()
             self.norm_csv = norm_csv
         '''
-        print("Unit here::::::::::::::::::::::::::::::::")
-
-
-
-
         if additional_cut:
             df.query( additional_cut, inplace = True )
 
@@ -137,11 +131,12 @@ class DataFrame(object):
         if as_matrix: return self.df_train[ self.train_variables ].values
         else:         return self.df_train[ self.train_variables ]
 
-    def get_train_data_cnn(self, as_matrix = True):
+    def get_train_data_cnn(self, as_matrix = True, normed = True):
         if as_matrix:
             df_cnn_train = self.df_train[self.indices]
-            re = df_cnn_train.values.reshape(-1, self.etabins, self.phibins)
-            re = re.reshape(-1, *self.size_input_image)
+            if normed:
+                df_cnn_train /= 255.0
+            re = df_cnn_train.values.reshape(-1, *self.size_input_image)
             return re
 
     def get_train_weights(self):
@@ -165,8 +160,9 @@ class DataFrame(object):
         #if not normed: return self.df_test_unnormed[ self.train_variables ]
         if as_matrix:
             df_cnn_test = self.df_test[self.indices]
-            re = df_cnn_test.values.reshape(-1, self.etabins, self.phibins)
-            re = re.reshape(-1, *self.size_input_image)
+            if normed:
+                df_cnn_test /= 255.0
+            re = df_cnn_test.values.reshape(-1, *self.size_input_image)
             return re
 
 
