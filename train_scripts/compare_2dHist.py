@@ -46,7 +46,7 @@ workpath = "/ceph/hluedemann/DRACO-MLfoy/workdir"
 key = sys.argv[1]
 
 inPath   = workpath + "/train_samples/AachenDNN_files"
-savepath = workpath + "/hist2D"+str(key)+"/"
+savepath = workpath + "/hist2D_"+str(key)+"/"
 
 # Define the models
 dnn_aachen = DNN_Aachen.DNN(
@@ -157,7 +157,6 @@ def plot_confusion_matrix(confusion_matrix,
 # Run the dnn and dnn_aachen for num_runs train_samples and store the
 # confusion matrix and the auc score for every run
 
-print(dnn.data.df_train.head())
 
 dnn.build_model()
 dnn.train_model()
@@ -165,8 +164,6 @@ dnn.eval_model()
 
 predict_vector_dnn = dnn.model_prediction_vector
 predict_classes_dnn = dnn.predicted_classes
-
-print(dnn_aachen.data.df_train.head())
 
 dnn_aachen.build_model()
 dnn_aachen.train_models()
@@ -183,17 +180,21 @@ plt.clf()
 plt.figure( figsize = [10,10])
 plt.title("2D-Hist of predictions", fontsize=15)
 
-plt.hist2d(predict_classes_dnn_aachen, predict_classes_dnn, bins=6)
+plt.hist2d(predict_classes_dnn_aachen, predict_classes_dnn, bins=6, range=[[0, 6], [0, 6]], cmap="Greens")
+
+plt.xticks(np.arange(0.5, 6.5, 1), event_classes)
+plt.yticks(np.arange(0.5, 6.5, 1), event_classes)
+
 plt.xlabel("Prediction Aachen-DNN", fontsize=14)
 plt.ylabel("Prediction DNN", fontsize=14)
 
+# correlation
+correlation_matrix = np.corrcoef(predict_classes_dnn_aachen, predict_classes_dnn)
+plt.annotate("Correlation: {:.3f}".format(correlation_matrix[0][1]), (0,0), (0, -40), xycoords='axes fraction', textcoords='offset points', va='top', fontsize=14)
 plt.colorbar()
 plt.savefig(savepath + "hist2d.pdf")
 
 # Plot the 2d hists of the one hot output for every class
-
-print(predict_vector_dnn.shape)
-print(predict_vector_dnn)
 
 for i in range(len(dnn.event_classes)):
 
@@ -204,8 +205,10 @@ for i in range(len(dnn.event_classes)):
     plt.figure( figsize = [10,10])
     plt.title("Predictions of calss {}".format(dnn.event_classes[i]), fontsize=15)
 
-    plt.hist2d(dnn_achen_data, dnn_data, bins=50)
+    plt.hist2d(dnn_achen_data, dnn_data, bins=50, cmap="Greens")
     plt.xlabel("Prediction Aachen-DNN", fontsize=14)
     plt.ylabel("Prediction DNN", fontsize=14)
+    correlation_matrix = np.corrcoef(dnn_achen_data, dnn_data)
+    plt.annotate("Correlation: {:.3f}".format(correlation_matrix[0][1]), (0,0), (0, -40), xycoords='axes fraction', textcoords='offset points', va='top', fontsize=14)
     plt.colorbar()
     plt.savefig(savepath + "hist2d_prediction_class_{}.pdf".format(i+1))
