@@ -46,7 +46,7 @@ workpath = "/ceph/hluedemann/DRACO-MLfoy/workdir"
 key = sys.argv[1]
 
 inPath   = workpath + "/train_samples/AachenDNN_files"
-savepath = workpath + "/1_Compare_Aachen_DNN_"+str(key)+"/"
+savepath = workpath + "/hist2D"+str(key)+"/"
 
 # Define the models
 dnn_aachen = DNN_Aachen.DNN(
@@ -157,148 +157,55 @@ def plot_confusion_matrix(confusion_matrix,
 # Run the dnn and dnn_aachen for num_runs train_samples and store the
 # confusion matrix and the auc score for every run
 
-num_runs = 2
-cm_dnn = []
-cm_dnn_aachen = []
-auc_score_dnn = []
-auc_score_dnn_aachen = []
+print(dnn.data.df_train.head())
 
-predict_dnn =[]
-predict_dnn_aachen =[]
+dnn.build_model()
+dnn.train_model()
+dnn.eval_model()
 
-for i in range(0, num_runs):
+predict_vector_dnn = dnn.model_prediction_vector
+predict_classes_dnn = dnn.predicted_classes
 
-    print("##### Run number: {} ######".format(i))
+print(dnn_aachen.data.df_train.head())
 
-    dnn.build_model()
-    dnn.train_model()
-    dnn.eval_model()
+dnn_aachen.build_model()
+dnn_aachen.train_models()
+dnn_aachen.eval_model()
 
-    predict_dnn = dnn.predicted_classes
-
-    print(dnn.confusion_matrix)
-    print(dnn.confusion_matrix.shape)
-    cm_dnn.append(dnn.confusion_matrix)
-    auc_score_dnn.append(dnn.auc_score)
-
-    dnn_aachen.build_model()
-    dnn_aachen.train_models()
-    dnn_aachen.eval_model()
-
-    predict_dnn_aachen = dnn_aachen.predicted_classes
-
-    cm_dnn_aachen.append(dnn_aachen.confusion_matrix)
-    auc_score_dnn_aachen.append(dnn_aachen.main_roc_score)
+predict_vector_dnn_aachen = dnn_aachen.mainnet_predicted_vector
+predict_classes_dnn_aachen = dnn_aachen.predicted_classes
 
 
 
-# Plot 2d hist of dnn and dnn_aachen predictions
+# Plot 2d hist of dnn and dnn_aachen predicted classes
 
 plt.clf()
-
 plt.figure( figsize = [10,10])
-
 plt.title("2D-Hist of predictions", fontsize=15)
 
-plt.hist2d(predict_dnn_aachen, predict_dnn, bins=6)
+plt.hist2d(predict_classes_dnn_aachen, predict_classes_dnn, bins=6)
 plt.xlabel("Prediction Aachen-DNN", fontsize=14)
 plt.ylabel("Prediction DNN", fontsize=14)
 
 plt.colorbar()
-
 plt.savefig(savepath + "hist2d.pdf")
 
+# Plot the 2d hists of the one hot output for every class
 
-# Calculate the mean confusion_matrix and plot it
+print(predict_vector_dnn.shape)
+print(predict_vector_dnn)
 
-result_cm_dnn = cm_dnn[0]
-result_cm_dnn_aachen = cm_dnn_aachen[0]
-result_auc_dnn = auc_score_dnn[0]
-result_auc_dnn_aachen = auc_score_dnn_aachen[0]
+for i in range(len(dnn.event_classes)):
 
+    dnn_data = predict_vector_dnn[:, i]
+    dnn_achen_data = predict_vector_dnn_aachen[:, i]
 
-# Calculate the confusion matrices
-for i in range(1, num_runs):
-    result_cm_dnn += cm_dnn[i]
-    result_cm_dnn_aachen += cm_dnn_aachen[i]
-    result_auc_dnn += auc_score_dnn[i]
-    result_auc_dnn_aachen += auc_score_dnn_aachen[i]
+    plt.clf()
+    plt.figure( figsize = [10,10])
+    plt.title("Predictions of calss {}".format(dnn.event_classes[i]), fontsize=15)
 
-
-result_cm_dnn /= num_runs
-result_cm_dnn_aachen /= num_runs
-result_auc_dnn /= num_runs
-result_auc_dnn_aachen /= num_runs
-
-# Calculate the standard error of the mean
-dnn_error = result_cm_dnn * 0.0
-dnn_aachen_error = result_cm_dnn_aachen * 0.0
-auc_err_dnn = 0.0
-auc_err_dnn_aachen = 0.0
-
-for i in range(0, num_runs):
-    dnn_error += (cm_dnn[i] - result_cm_dnn)**2 / (num_runs * (num_runs - 1))
-    dnn_aachen_error += (cm_dnn_aachen[i] - result_cm_dnn_aachen)**2 / (num_runs * (num_runs - 1))
-    auc_err_dnn += (auc_score_dnn[i] - result_auc_dnn)**2 / (num_runs * (num_runs - 1))
-    auc_err_dnn_aachen += (auc_score_dnn_aachen[i] - result_auc_dnn_aachen)**2 / (num_runs  * (num_runs - 1))
-
-dnn_error = np.sqrt(dnn_error)
-dnn_aachen_error = np.sqrt(dnn_aachen_error)
-auc_err_dnn = np.sqrt(auc_err_dnn)
-auc_err_dnn_aachen = np.sqrt(auc_err_dnn_aachen)
-
-
-print("Result cm_dnn: {}".format(result_cm_dnn))
-print("Result cm_dnn_aachen: {}".format(result_cm_dnn_aachen))
-
-
-result_cm_dnn_norm, err_cm_dnn_nomr = plot_confusion_matrix(
-                      confusion_matrix = result_cm_dnn,
-                      error_confusion_matrix = dnn_error,
-                      xticklabels = dnn.data.classes,
-                      yticklabels = dnn.data.classes,
-                      title = "Confusion Matrix DNN: Category: {}".format(str(key)),
-                      roc = result_auc_dnn,
-                      roc_err = auc_err_dnn,
-                      save_path = savepath + "confusion_matrix_dnn.pdf",
-                      norm_matrix = True,
-                      difference = False)
-result_cm_dnn_aachen_norm, err_cm_dnn_aachen = plot_confusion_matrix(
-                      confusion_matrix = result_cm_dnn_aachen,
-                      error_confusion_matrix = dnn_aachen_error,
-                      xticklabels = dnn.data.classes,
-                      yticklabels = dnn.data.classes,
-                      title = "Confusion Matrix DNN_Aachen: Category: {}".format(str(key)),
-                      roc = result_auc_dnn_aachen,
-                      roc_err = auc_err_dnn_aachen,
-                      save_path = savepath + "confusion_matrix_dnn_aachen.pdf",
-                      norm_matrix = True,
-                      difference = False)
-
-# Calculate the confusion matrix of the differences of the two confusion matrices
-result_cm_difference_nomr = result_cm_dnn_norm - result_cm_dnn_aachen_norm
-roc_difference = result_auc_dnn_aachen - result_auc_dnn
-
-# Calculate the errorporpagation
-error_difference = np.sqrt(err_cm_dnn_nomr**2 + err_cm_dnn_aachen**2)
-roc_error_difference = np.sqrt(auc_err_dnn**2 + auc_err_dnn_aachen**2)
-
-plot_confusion_matrix(confusion_matrix = result_cm_difference_nomr,
-                      error_confusion_matrix = error_difference,
-                      xticklabels = dnn.data.classes,
-                      yticklabels = dnn.data.classes,
-                      title = "Confusion Matrix Difference: Category: {}".format(str(key)),
-                      roc = roc_difference,
-                      roc_err = roc_error_difference,
-                      save_path = savepath + "confusion_matrix_differences.pdf",
-                      norm_matrix = False,
-                      difference = True)
-
-
-
-# Print the auc-scores
-
-print("Mean auc score DNN: {}".format(result_auc_dnn))
-print("Mean auc score DNN_Aachen: {}".format(result_auc_dnn_aachen))
-print("Mean auc err DNN: {}".format(auc_err_dnn))
-print("Mean auc err DNN_Aachen: {}".format(auc_err_dnn_aachen))
+    plt.hist2d(dnn_achen_data, dnn_data, bins=50)
+    plt.xlabel("Prediction Aachen-DNN", fontsize=14)
+    plt.ylabel("Prediction DNN", fontsize=14)
+    plt.colorbar()
+    plt.savefig(savepath + "hist2d_prediction_class_{}.pdf".format(i+1))
