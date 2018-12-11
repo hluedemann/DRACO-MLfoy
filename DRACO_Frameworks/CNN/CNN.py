@@ -79,7 +79,8 @@ class CNN():
                 loss_function = "categorical_crossentropy",
                 test_percentage = 0.2,
                 eval_metrics = None,
-                additional_cut = None):
+                additional_cut = None,
+                phi_padding = 0):
 
         # save some information
 
@@ -116,6 +117,8 @@ class CNN():
 
         self.optimizer = optimizer
 
+        self.phi_padding = phi_padding
+
         # load dataset
         self.data = self._load_datasets()
         self.data.get_train_data_cnn
@@ -137,7 +140,8 @@ class CNN():
             train_variables     = self.train_variables,
             test_percentage     = self.test_percentage,
             norm_variables      = True,
-            additional_cut      = self.additional_cut)
+            additional_cut      = self.additional_cut,
+            phi_padding         = self.phi_padding)
 
     def load_trained_model(self):
         ''' load an already trained model '''
@@ -207,13 +211,14 @@ class CNN():
         return model
 
 
-    def build_model(self, pre_net = None, main_net = None):
+    def build_model(self, model = None):
         ''' build a DNN model
             if none is specified use default model '''
 
-
-        main_net = self.build_default_model()
-
+        if model == None:
+            main_net = self.build_default_model()
+        else:
+            main_net = model
 
 
 
@@ -410,3 +415,6 @@ class CNN():
         plt.savefig(out_path)
         print("saved confusion matrix at "+str(out_path))
         plt.clf()
+
+
+    

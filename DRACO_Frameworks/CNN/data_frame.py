@@ -12,7 +12,8 @@ class DataFrame(object):
                 test_percentage = 0.1,
                 norm_variables = False,
                 additional_cut = None,
-                lumi = 41.5):
+                lumi = 41.5,
+                phi_padding = 0):
 
         ''' takes a path to a folder where one h5 per class is located
             the events are cut according to the event_category
@@ -88,10 +89,10 @@ class DataFrame(object):
         # save some meta data about net
         self.n_input_neurons = len(train_variables)
         self.n_output_neurons = len(classes)
-        self.size_input_image = (self.etabins, self.phibins, 1)
+        self.size_input_image = [self.etabins, self.phibins, 1]
 
         # shuffle dataframe
-        df = shuffle(df)
+        df = shuffle(df, random_state = 333)
         # norm variables if wanted
 
         unnormed_df = df.copy()
@@ -125,6 +126,40 @@ class DataFrame(object):
         #self.prenet_targets = prenet_targets
         self.output_classes = classes
 
+        ## CNN data
+        self.df_cnn_train = self.df_train[self.indices]
+        self.df_cnn_train /= 255.0
+        self.X_cnn = self.df_cnn_train.values.reshape(-1, *self.size_input_image)
+
+        self.df_cnn_test = self.df_test[self.indices]
+        self.df_cnn_test /= 255.0
+        self.X_cnn_test = self.df_cnn_test.values.reshape(-1, *self.size_input_image)
+
+
+        if phi_padding != 0:
+             # padding in phi plane
+            # add rows to top and bottom of image in the phi coordinate
+            # representing the rotational dimension of phi
+            self.X_cnn = np.concatenate(
+                (self.X_cnn[:,:,-phi_padding:], self.X_cnn, self.X_cnn[:,:,:phi_padding]),
+                axis = 2)
+            print("data shape after padding: {}".format(self.X_cnn.shape))
+
+            self.X_cnn_test = np.concatenate(
+                (self.X_cnn_test[:,:,-phi_padding:], self.X_cnn_test, self.X_cnn_test[:,:,:phi_padding]),
+                axis = 2)
+
+            # edit input shape adjustment
+            self.size_input_image[1] += 2*phi_padding
+            print("input shape after padding: {}".format(self.size_input_image))
+            self.image_size = self.size_input_image[0]*self.size_input_image[1]*self.size_input_image[2]
+            print("image size after padding: {}".format(self.image_size))
+
+
+
+
+
+
 
     # train data -----------------------------------
     def get_train_data(self, as_matrix = True):
@@ -133,11 +168,7 @@ class DataFrame(object):
 
     def get_train_data_cnn(self, as_matrix = True, normed = True):
         if as_matrix:
-            df_cnn_train = self.df_train[self.indices]
-            if normed:
-                df_cnn_train /= 255.0
-            re = df_cnn_train.values.reshape(-1, *self.size_input_image)
-            return re
+            return self.X_cnn
 
     def get_train_weights(self):
         return self.df_train["train_weight"].values
@@ -159,11 +190,7 @@ class DataFrame(object):
     def get_test_data_cnn(self, as_matrix = True, normed = True):
         #if not normed: return self.df_test_unnormed[ self.train_variables ]
         if as_matrix:
-            df_cnn_test = self.df_test[self.indices]
-            if normed:
-                df_cnn_test /= 255.0
-            re = df_cnn_test.values.reshape(-1, *self.size_input_image)
-            return re
+            return self.X_cnn_test
 
 
     def get_test_weights(self):

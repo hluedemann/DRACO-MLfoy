@@ -137,7 +137,8 @@ class CNN():
             train_variables     = self.train_variables,
             test_percentage     = self.test_percentage,
             norm_variables      = True,
-            additional_cut      = self.additional_cut)
+            additional_cut      = self.additional_cut,
+            phi_padding         = 0)
 
     def load_trained_model(self):
         ''' load an already trained model '''

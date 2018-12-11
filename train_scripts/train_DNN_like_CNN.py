@@ -109,10 +109,10 @@ model.add(layer.Dense(
     kernel_regularizer = keras.regularizers.l2(1e-5)))
 model.add(layer.Dropout(0.3))
 
-model.add(layer.Dense(
-    100,
-    kernel_regularizer = keras.regularizers.l2(1e-5)))
-model.add(layer.Dropout(0.3))
+# model.add(layer.Dense(
+#     100,
+#     kernel_regularizer = keras.regularizers.l2(1e-5)))
+# model.add(layer.Dropout(0.3))
 
 # create output layer
 model.add(layer.Dense(
