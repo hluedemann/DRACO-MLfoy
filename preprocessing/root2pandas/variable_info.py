@@ -24,7 +24,7 @@ all_variables = {
     "min_dR_jj":                "Evt_Dr_MinDeltaRJets",
     "min_dR_bb":                "Evt_Dr_MinDeltaRTaggedJets",
 
-    "max_dR_jj":                "BDT_common5_input_max_dR_jj", 
+    "max_dR_jj":                "BDT_common5_input_max_dR_jj",
     "max_dR_bb":                "BDT_common5_input_max_dR_bb",
 
     "aplanarity_jets":          "BDT_common5_input_aplanarity_jets",
@@ -150,7 +150,7 @@ variables_4j_3b = [
 
     "blr",
     "blr_transformed",
-    "dank_MEM",
+    #"dank_MEM",
     ]
 
 # SL 5j,>=3b

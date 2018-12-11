@@ -6,11 +6,6 @@ import socket
 
 import matplotlib.pyplot as plt
 
-# local imports
-filedir = os.path.dirname(os.path.realpath(__file__))
-basedir = os.path.dirname(filedir)
-sys.path.append(basedir)
-
 import keras
 import keras.models as models
 import keras.layers as layer
@@ -26,10 +21,14 @@ from keras.layers.core import Flatten
 from keras.layers.core import Dropout
 from keras.layers.core import Dense
 
+# local imports
+filedir = os.path.dirname(os.path.realpath(__file__))
+basedir = os.path.dirname(filedir)
+sys.path.append(basedir)
 
 #import DRACO_Frameworks.CNN.CNN as CNN
 import DRACO_Frameworks.CNN.data_frame
-import DRACO_Frameworks.CNN.CNN as CNN
+import DRACO_Frameworks.CNN.DNN_like_CNN as DNN
 import DRACO_Frameworks.CNN.variable_info as variable_info
 
 category_vars = {
@@ -62,17 +61,17 @@ else:
 key = sys.argv[1]
 
 inPath   = workpath + "/train_samples"
-savepath = workpath + "/CNN"+str(key)+""
+savepath = workpath + "/DNN_like_CNN_"+str(key)+""
 
 
-cnn = CNN.CNN(
+dnn = DNN.DNN(
     in_path             = inPath,
     save_path           = savepath,
     event_classes       = event_classes,
     event_category      = categories[key],
     train_variables     = category_vars[key],
-    train_epochs        = 10,
-    early_stopping      = 5,
+    train_epochs        = 100,
+    early_stopping      = 20,
     optimizer           = "adam",
     test_percentage     = 0.2,
     eval_metrics        = ["acc"]
@@ -94,40 +93,42 @@ plt.savefig(savepath + "example.pdf")
 '''
 
 
+# Build model
+
 model = models.Sequential()
+# add input layer
+model.add(layer.Dense(
+    100,
+    input_dim = 775,
+    kernel_regularizer = keras.regularizers.l2(1e-5)))
 
-# CONV -> RELU -> POOL
-model.add(Conv2D(32, (3, 3), padding="same", input_shape = cnn.data.size_input_image))
-model.add(Activation("relu"))
-model.add(AveragePooling2D(pool_size=(2,2)))
+# loop over all dens layers
+
+model.add(layer.Dense(
+    100,
+    kernel_regularizer = keras.regularizers.l2(1e-5)))
+model.add(layer.Dropout(0.3))
+
+model.add(layer.Dense(
+    100,
+    kernel_regularizer = keras.regularizers.l2(1e-5)))
+model.add(layer.Dropout(0.3))
+
+# create output layer
+model.add(layer.Dense(
+    dnn.data.n_output_neurons,
+    activation = "softmax",
+    kernel_regularizer = keras.regularizers.l2(1e-5)))
 
 
-# (CONV => RELU) * 2 => POOL
-model.add(Conv2D(64, (3, 3), padding="same"))
-model.add(Activation("relu"))
-model.add(AveragePooling2D(pool_size=(2, 2)))
-model.add(Conv2D(128, (3, 3), padding="same"))
-model.add(Activation("relu"))
-model.add(AveragePooling2D(pool_size=(2, 2)))
+dnn.build_model(model)
 
-# first (and only) set of FC => RELU layers
-model.add(Flatten())
-model.add(Dense(256))
-model.add(Activation("relu"))
-#model.add(BatchNormalization())
-# softmax classifier
-model.add(Dense(cnn.data.n_output_neurons))
-model.add(Activation("softmax"))
+dnn.train_models()
 
+dnn.eval_model()
 
-cnn.build_model()
-
-cnn.train_models()
-
-cnn.eval_model()
-
-cnn.plot_metrics()
-cnn.plot_confusion_matrix(norm_matrix = True)
+dnn.plot_metrics()
+dnn.plot_confusion_matrix(norm_matrix = True)
 '''
 cnn.plot_prenet_nodes()
 cnn.plot_class_differences()

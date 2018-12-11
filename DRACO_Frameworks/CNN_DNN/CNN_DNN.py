@@ -194,13 +194,17 @@ class CNN():
         model.add(AveragePooling2D(pool_size=(2, 2)))
         model.add(Conv2D(128, (3, 3), padding="same"))
         model.add(Activation("relu"))
+        model.add(Conv2D(256, (3, 3), padding="same"))
+        model.add(Activation("relu"))
         model.add(AveragePooling2D(pool_size=(2, 2)))
 
         # first (and only) set of FC => RELU layers
         model.add(Flatten())
         model.add(Dense(256))
         model.add(Activation("relu"))
-        #model.add(BatchNormalization())
+        model.add(Dense(256))
+        model.add(Activation("relu"))
+        model.add(BatchNormalization())
         # softmax classifier
         model.add(Dense(self.data.n_output_neurons))
         model.add(Activation("softmax"))

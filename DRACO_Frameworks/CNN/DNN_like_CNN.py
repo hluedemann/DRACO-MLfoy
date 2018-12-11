@@ -67,7 +67,7 @@ class EarlyStoppingByLossDiff(keras.callbacks.Callback):
 
 
 
-class CNN():
+class DNN():
     def __init__(self, in_path, save_path,
                 event_classes,
                 event_category,
@@ -180,40 +180,47 @@ class CNN():
 
     def build_default_model(self):
         ''' default Aachen-DNN model as used in the analysis '''
+        # define model
         model = models.Sequential()
+        # add input layer
+        model.add(layer.Dense(
+            100,
+            input_dim = 775,
+            activation = "elu",
+            kernel_regularizer = keras.regularizers.l2(1e-5)))
 
-        # CONV -> RELU -> POOL
-        model.add(Conv2D(32, (3, 3), padding="same", input_shape = self.data.size_input_image))
-        model.add(Activation("relu"))
-        model.add(AveragePooling2D(pool_size=(2,2)))
+        # loop over all dens layers
 
+        model.add(layer.Dense(
+            100,
+            activation = "elu",
+            kernel_regularizer = keras.regularizers.l2(1e-5)))
+        model.add(layer.Dropout(0.3))
 
-        # (CONV => RELU) * 2 => POOL
-        model.add(Conv2D(64, (3, 3), padding="same"))
-        model.add(Activation("relu"))
-        model.add(AveragePooling2D(pool_size=(2, 2)))
-        model.add(Conv2D(128, (3, 3), padding="same"))
-        model.add(Activation("relu"))
-        model.add(AveragePooling2D(pool_size=(2, 2)))
+        model.add(layer.Dense(
+            100,
+            activation = "elu",
+            kernel_regularizer = keras.regularizers.l2(1e-5)))
+        model.add(layer.Dropout(0.3))
 
-        # first (and only) set of FC => RELU layers
-        model.add(Flatten())
-        model.add(Dense(256))
-        model.add(Activation("relu"))
-        #model.add(BatchNormalization())
-        # softmax classifier
-        model.add(Dense(self.data.n_output_neurons))
-        model.add(Activation("softmax"))
+        # create output layer
+        model.add(layer.Dense(
+            self.data.n_output_neurons,
+            activation = "softmax",
+            kernel_regularizer = keras.regularizers.l2(1e-5)))
+
         return model
 
 
-    def build_model(self, pre_net = None, main_net = None):
+
+    def build_model(self, model = None):
         ''' build a DNN model
             if none is specified use default model '''
 
-
-        main_net = self.build_default_model()
-
+        if model == None:
+            main_net = self.build_default_model()
+        else:
+            main_net = model
 
 
 
@@ -254,8 +261,14 @@ class CNN():
                 verbose = 1)]
 
         # train main net
+
+        x = self.data.get_train_data_cnn()
+        x = x.squeeze(axis=3)
+        x = x.reshape(x.shape[0], x.shape[1] * x.shape[2])
+
+
         self.trained_main_net = self.main_net.fit(
-            x = self.data.get_train_data_cnn(as_matrix = True),
+            x = x,
             y = self.data.get_train_labels(),
             batch_size = self.batch_size,
             epochs = self.train_epochs,
@@ -286,8 +299,13 @@ class CNN():
         ''' evaluate trained model '''
 
         # main net evaluation
+
+        test_data = self.data.get_test_data_cnn()
+        test_data = test_data.squeeze(axis=3)
+        test_data = test_data.reshape(test_data.shape[0], test_data.shape[1] * test_data.shape[2])
+
         self.mainnet_eval = self.main_net.evaluate(
-            self.data.get_test_data_cnn(as_matrix = True),
+            test_data,
             self.data.get_test_labels())
 
         # save history of eval metrics
@@ -295,7 +313,7 @@ class CNN():
 
         # save predictions
         self.mainnet_predicted_vector = self.main_net.predict(
-            self.data.get_test_data_cnn(as_matrix = True) )
+            test_data )
 
         # save predicted classes with argmax
         self.predicted_classes = np.argmax( self.mainnet_predicted_vector, axis = 1)
