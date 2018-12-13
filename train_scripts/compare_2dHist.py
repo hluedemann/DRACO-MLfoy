@@ -208,7 +208,16 @@ for i in range(len(dnn.event_classes)):
     plt.hist2d(dnn_achen_data, dnn_data, bins=50, cmap="Greens")
     plt.xlabel("Prediction Aachen-DNN", fontsize=14)
     plt.ylabel("Prediction DNN", fontsize=14)
+
+    plt.xlim(0.0, 1.0)
+    plt.ylim(0.0, 1.0)
+
+    plt.xticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+    plt.yticks([0.0, 0.2, 0.4, 0.6, 0.8, 1.0])
+
     correlation_matrix = np.corrcoef(dnn_achen_data, dnn_data)
     plt.annotate("Correlation: {:.3f}".format(correlation_matrix[0][1]), (0,0), (0, -40), xycoords='axes fraction', textcoords='offset points', va='top', fontsize=14)
     plt.colorbar()
+
+    plt.plot(np.linspace(0, 1, 100), np.linspace(0, 1, 100), color='grey')
     plt.savefig(savepath + "hist2d_prediction_class_{}.pdf".format(i+1))

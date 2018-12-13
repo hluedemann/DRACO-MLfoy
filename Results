@@ -1,0 +1,8 @@
+
+## 12.09.201
+
+  * Klassifizierung CNN mit image der Eta-Phi-Ebene als input
+    -> Genauigkeit bis zu 37% & ROC ca 0.60
+
+  * Klassifizierung DNN mit nur image der Eta-Phi-Ebene als Inputvektor
+    -> Genauigkeit bis 21 % & ROC ca 0.54
