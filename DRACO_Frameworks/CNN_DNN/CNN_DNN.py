@@ -20,11 +20,16 @@ config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 set_session(tf.Session(config=config))
 
+import matplotlib
+matplotlib.use('Agg')
+
 from matplotlib.colors import LogNorm
 import matplotlib.pyplot as plt
 
 import numpy as np
 import pandas
+
+
 
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
@@ -67,7 +72,7 @@ class EarlyStoppingByLossDiff(keras.callbacks.Callback):
 
 
 
-class CNN():
+class CNN_DNN():
     def __init__(self, in_path, save_path,
                 event_classes,
                 event_category,
@@ -79,7 +84,8 @@ class CNN():
                 loss_function = "categorical_crossentropy",
                 test_percentage = 0.2,
                 eval_metrics = None,
-                additional_cut = None):
+                additional_cut = None,
+                phi_padding = 0):
 
         # save some information
 
@@ -115,6 +121,7 @@ class CNN():
         self.additional_cut = additional_cut
 
         self.optimizer = optimizer
+        self.phi_padding = phi_padding
 
         # load dataset
         self.data = self._load_datasets()
@@ -138,7 +145,7 @@ class CNN():
             test_percentage     = self.test_percentage,
             norm_variables      = True,
             additional_cut      = self.additional_cut,
-            phi_padding         = 0)
+            phi_padding         = self.phi_padding)
 
     def load_trained_model(self):
         ''' load an already trained model '''
@@ -181,35 +188,39 @@ class CNN():
 
     def build_default_model(self):
         ''' default Aachen-DNN model as used in the analysis '''
-        model = models.Sequential()
+        modelCNN = models.Sequential()
 
-        # CONV -> RELU -> POOL
-        model.add(Conv2D(32, (3, 3), padding="same", input_shape = self.data.size_input_image))
-        model.add(Activation("relu"))
-        model.add(AveragePooling2D(pool_size=(2,2)))
+        modelCNN.add(Conv2D(32, (4, 4), padding="same", input_shape = self.data.size_input_image))
+        modelCNN.add(Activation("relu"))
+        modelCNN.add(AveragePooling2D(pool_size=(2,2)))
+
+        modelCNN.add(Conv2D(64, (4, 4), padding="same"))
+        modelCNN.add(Activation("relu"))
+        modelCNN.add(AveragePooling2D(pool_size=(2, 2)))
+        modelCNN.add(Conv2D(128, (4, 4), padding="same"))
+        modelCNN.add(Activation("relu"))
+        modelCNN.add(AveragePooling2D(pool_size=(2, 2)))
+        modelCNN.add(Flatten())
+
+        modelDNN = models.Sequential()
+        modelDNN.add(Dense(100, input_shape = (self.data.n_input_neurons,)))
+        modelDNN.add(Activation("relu"))
+        modelDNN.add(Dropout(0.5))
+        modelDNN.add(Dense(100))
+        modelDNN.add(Activation("relu"))
+        modelDNN.add(Dropout(0.5))
 
 
-        # (CONV => RELU) * 2 => POOL
-        model.add(Conv2D(64, (3, 3), padding="same"))
-        model.add(Activation("relu"))
-        model.add(AveragePooling2D(pool_size=(2, 2)))
-        model.add(Conv2D(128, (3, 3), padding="same"))
-        model.add(Activation("relu"))
-        model.add(Conv2D(256, (3, 3), padding="same"))
-        model.add(Activation("relu"))
-        model.add(AveragePooling2D(pool_size=(2, 2)))
+        mergedOutput = layer.Concatenate()([modelCNN.output, modelDNN.output])
 
-        # first (and only) set of FC => RELU layers
-        model.add(Flatten())
-        model.add(Dense(256))
-        model.add(Activation("relu"))
-        model.add(Dense(256))
-        model.add(Activation("relu"))
-        model.add(BatchNormalization())
-        # softmax classifier
-        model.add(Dense(self.data.n_output_neurons))
-        model.add(Activation("softmax"))
-        return model
+        out = Dense(100, activation='relu')(mergedOutput)
+        out = Dropout(0.5)(out)
+        out = Dense(100, activation='relu')(out)
+        out = Dense(self.data.n_output_neurons, activation='softmax')(out)
+
+        mergedModel = models.Model([modelCNN.input, modelDNN.input], out)
+
+        return mergedModel
 
 
     def build_model(self, pre_net = None, main_net = None):
@@ -260,7 +271,7 @@ class CNN():
 
         # train main net
         self.trained_main_net = self.main_net.fit(
-            x = self.data.get_train_data_cnn(as_matrix = True),
+            x = [self.data.get_train_data_cnn(as_matrix = True), self.data.get_train_data(as_matrix=True)],
             y = self.data.get_train_labels(),
             batch_size = self.batch_size,
             epochs = self.train_epochs,
@@ -292,15 +303,15 @@ class CNN():
 
         # main net evaluation
         self.mainnet_eval = self.main_net.evaluate(
-            self.data.get_test_data_cnn(as_matrix = True),
-            self.data.get_test_labels())
+            x = [self.data.get_test_data_cnn(as_matrix = True), self.data.get_test_data(as_matrix = True)],
+            y = self.data.get_test_labels())
 
         # save history of eval metrics
         self.mainnet_history = self.trained_main_net.history
 
         # save predictions
         self.mainnet_predicted_vector = self.main_net.predict(
-            self.data.get_test_data_cnn(as_matrix = True) )
+            [self.data.get_test_data_cnn(as_matrix = True), self.data.get_test_data(as_matrix = True)])
 
         # save predicted classes with argmax
         self.predicted_classes = np.argmax( self.mainnet_predicted_vector, axis = 1)
@@ -383,7 +394,7 @@ class CNN():
         xn, yn = np.meshgrid(x,y)
 
         plt.pcolormesh(xn, yn, self.confusion_matrix,
-            norm = LogNorm( vmin = max(minimum, 1e-6), vmax = min(maximum,1.) ))
+            norm = LogNorm( vmin = max(minimum, 1e-6), vmax = min(maximum,1.)), cmap="jet")
         plt.colorbar()
 
         plt.xlim(0, n_classes)

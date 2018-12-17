@@ -29,6 +29,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas
 
+
+
 from sklearn.metrics import classification_report
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import roc_auc_score
@@ -70,7 +72,7 @@ class EarlyStoppingByLossDiff(keras.callbacks.Callback):
 
 
 
-class CNN():
+class CNN_DNN_PRE():
     def __init__(self, in_path, save_path,
                 event_classes,
                 event_category,
@@ -119,7 +121,6 @@ class CNN():
         self.additional_cut = additional_cut
 
         self.optimizer = optimizer
-
         self.phi_padding = phi_padding
 
         # load dataset
@@ -186,44 +187,81 @@ class CNN():
 
 
     def build_default_model(self):
-        ''' default Aachen-DNN model as used in the analysis '''
-        model = models.Sequential()
 
-        # CONV -> RELU -> POOL
-        model.add(Conv2D(32, (3, 3), padding="same", input_shape = self.data.size_input_image))
-        model.add(Activation("relu"))
-        model.add(AveragePooling2D(pool_size=(2,2)))
+        K.set_learning_phase(True)
+
+        inputs = keras.layers.Input(
+            shape = self.data.size_input_image,
+            name = "input"
+        )
+
+        x = layer.Conv2D(32, kernel_size = (4,4),
+                activation = "relu",
+                padding = "same")(inputs)
+        x = layer.AveragePooling2D( pool_size = (2,2), padding = "same" )(x)
+
+        x = layer.Conv2D(64, kernel_size = (4,4),
+                activation = "relu",
+                padding = "same")(x)
+        x = layer.AveragePooling2D( pool_size = (2,2), padding = "same" )(x)
+
+        x = layer.Conv2D(128, kernel_size = (4,4),
+                activation = "relu",
+                padding = "same")(x)
+        x = layer.AveragePooling2D( pool_size = (2,2), padding = "same" )(x)
+
+        x = layer.Conv2D(256, kernel_size = (4,4),
+                activation = "relu",
+                padding = "same")(x)
+        x = layer.AveragePooling2D( pool_size = (2,2), padding = "same" )(x)
+
+        x = layer.Flatten()(x)
+
+        x = layer.Dense(128, activation = "relu")(x)
+        x = layer.Dropout(0.5)(x)
+        x = layer.Dense(128, activation = "relu")(x)
+        x = layer.Dropout(0.5)(x)
+
+        outputs = layer.Dense(self.data.number_jet_categories)(x)
+
+        pre_net = models.Model(input = [inputs], outputs = [outputs])
+        pre_net.summary()
+
+        # main_net
+
+        main_input = keras.layers.Input(
+                shape = (self.data.n_input_neurons, ),
+                name = "main_input")
+
+        y = layer.Concatenate()([main_input, pre_net.output])
+        y = layer.Dense(128, activation="relu")(y)
+        y = layer.Dropout(0.5)(y)
+        y = layer.Dense(128, activation = "relu")(y)
+        y = layer.Dense(self.data.n_output_neurons, activation = "softmax")(y)
+
+        main_net = models.Model(input = [inputs, main_input], outputs = [y])
+
+        return pre_net, main_net
 
 
-        # (CONV => RELU) * 2 => POOL
-        model.add(Conv2D(64, (3, 3), padding="same"))
-        model.add(Activation("relu"))
-        model.add(AveragePooling2D(pool_size=(2, 2)))
-        model.add(Conv2D(128, (3, 3), padding="same"))
-        model.add(Activation("relu"))
-        model.add(AveragePooling2D(pool_size=(2, 2)))
-
-        # first (and only) set of FC => RELU layers
-        model.add(Flatten())
-        model.add(Dense(256))
-        model.add(Activation("relu"))
-        #model.add(BatchNormalization())
-        # softmax classifier
-        model.add(Dense(self.data.n_output_neurons))
-        model.add(Activation("softmax"))
-        return model
-
-
-    def build_model(self, model = None):
+    def build_model(self, pre_net = None, main_net = None):
         ''' build a DNN model
             if none is specified use default model '''
 
-        if model == None:
-            main_net = self.build_default_model()
-        else:
-            main_net = model
 
+        pre_net, main_net = self.build_default_model()
 
+        for layer in pre_net.layers:
+            layer.trainable = True
+
+        pre_net.compile(
+            loss = self.loss_function,
+            optimizer = self.optimizer,
+            metrics = self.eval_metrics)
+
+        # ste pre net untrainable
+        for layer in pre_net.layers:
+            layer.trainable = False
 
         # compile main net
         main_net.compile(
@@ -232,9 +270,16 @@ class CNN():
             metrics = self.eval_metrics)
 
         # save compiled nets
+        self.pre_net = pre_net
         self.main_net = main_net
 
+
         # save net information
+        # save net information
+        out_file = self.save_path+"/pre_net_summmary.yml"
+        yml_pre_net = self.pre_net.to_yaml()
+        with open(out_file, "w") as f:
+            f.write(yml_pre_net)
 
         out_file = self.save_path+"/main_net_summmary.yml"
         yml_main_net = self.main_net.to_yaml()
@@ -261,17 +306,60 @@ class CNN():
                 patience = 20,
                 verbose = 1)]
 
-        # train main net
-        self.trained_main_net = self.main_net.fit(
+        for layer in self.pre_net.layers:
+            layer.trainable = True
+
+        # train pre net
+        print("Training pre net ........")
+        self.trained_pre_net = self.pre_net.fit(
             x = self.data.get_train_data_cnn(as_matrix = True),
-            y = self.data.get_train_labels(),
+            y = self.data.get_train_number_jets(),
             batch_size = self.batch_size,
             epochs = self.train_epochs,
             shuffle = True,
-            callbacks = callbacks,
             validation_split = 0.25,
             sample_weight = self.data.get_train_weights()
             )
+
+        # set pre net as untrainable
+        for layer in self.pre_net.layers:
+            layer.trainable = False
+
+        out_file = cp_path + "/trained_pre_net.h5py"
+        self.pre_net.save(out_file)
+        print("saved trained prenet model at "+str(out_file))
+
+        prenet_config = self.pre_net.get_config()
+        out_file = cp_path +"/trained_pre_net_config"
+        with open(out_file, "w") as f:
+            f.write( str(prenet_config))
+        print("saved prenet model config at "+str(out_file))
+
+        out_file = cp_path +"/trained_pre_net_weights.h5"
+        self.pre_net.save_weights(out_file)
+        print("wrote trained prenet weights to "+str(out_file))
+
+        # add early stopping if activated
+        callbacks = None
+        if self.early_stopping:
+            callbacks = [EarlyStoppingByLossDiff(
+                monitor = "loss",
+                value = 0.01,
+                min_epochs = 100,
+                patience = 20,
+                verbose = 1)]
+
+        # train main net
+        print("Training main net .....")
+        self.trained_main_net = self.main_net.fit(
+            x = [self.data.get_train_data_cnn, self.data.get_train_data(as_matrix = True)],
+            y = self.data.get_train_labels(),
+            batch_size = self.batch_size,
+            epochs = self.train_epochs + 20,
+            shuffle = True,
+            validation_split = 0.25,
+            sample_weight = self.data.get_train_weights())
+
 
         # save trained model
         out_file = cp_path + "/trained_main_net.h5py"
@@ -293,9 +381,28 @@ class CNN():
     def eval_model(self):
         ''' evaluate trained model '''
 
+        # prenet evaluation
+        self.prenet_eval = self.pre_net.evaluate(
+            self.data.get_test_data_cnn(as_matrix = True),
+            self.data.get_test_number_jets())
+
+        # save history of eval metrics
+        self.prenet_history = self.trained_pre_net.history
+
+        # save predicitons
+        self.prenet_predicted_vector = self.pre_net.predict(
+            self.data.get_test_data_cnn(as_matrix = True) )
+
+        # print evaluations
+        if self.eval_metrics:
+            print("prenet test loss: {}".format(self.prenet_eval[0]))
+            for im, metric in enumerate(self.eval_metrics):
+                print("prenet test {}: {}".format(metric, self.prenet_eval[im+1]))
+
+
         # main net evaluation
         self.mainnet_eval = self.main_net.evaluate(
-            self.data.get_test_data_cnn(as_matrix = True),
+            [self.data.get_test_data_cnn, self.data.get_test_data(as_matrix = True)],
             self.data.get_test_labels())
 
         # save history of eval metrics
@@ -303,7 +410,7 @@ class CNN():
 
         # save predictions
         self.mainnet_predicted_vector = self.main_net.predict(
-            self.data.get_test_data_cnn(as_matrix = True) )
+            [self.data.get_test_data_cnn, self.data.get_test_data(as_matrix = True)] )
 
         # save predicted classes with argmax
         self.predicted_classes = np.argmax( self.mainnet_predicted_vector, axis = 1)
@@ -386,7 +493,7 @@ class CNN():
         xn, yn = np.meshgrid(x,y)
 
         plt.pcolormesh(xn, yn, self.confusion_matrix,
-            norm = LogNorm( vmin = max(minimum, 1e-6), vmax = min(maximum,1.) ))
+            norm = LogNorm( vmin = max(minimum, 1e-6), vmax = min(maximum,1.)), cmap="jet")
         plt.colorbar()
 
         plt.xlim(0, n_classes)
@@ -418,6 +525,3 @@ class CNN():
         plt.savefig(out_path)
         print("saved confusion matrix at "+str(out_path))
         plt.clf()
-
-
-    

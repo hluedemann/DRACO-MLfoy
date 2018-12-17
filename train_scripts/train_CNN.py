@@ -62,7 +62,7 @@ else:
 key = sys.argv[1]
 
 inPath   = workpath + "/train_samples"
-savepath = workpath + "/CNN_"+str(key)+""
+savepath = workpath + "/CNN_Phi_"+str(key)+""
 
 
 cnn = CNN.CNN(
@@ -76,7 +76,7 @@ cnn = CNN.CNN(
     optimizer           = "adam",
     test_percentage     = 0.2,
     eval_metrics        = ["acc"],
-    phi_padding = 10
+    phi_padding         = 0
     )
 
 
@@ -136,12 +136,14 @@ model.add(AveragePooling2D(pool_size=(2,2)))
 model.add(Conv2D(64, (3, 3), padding="same"))
 model.add(Activation("relu"))
 model.add(AveragePooling2D(pool_size=(2, 2)))
-model.add(Conv2D(128, (4, 4), padding="same"))
-model.add(Activation("relu"))
-model.add(AveragePooling2D(pool_size=(2, 2)))
+#model.add(Conv2D(128, (4, 4), padding="same"))
+#model.add(Activation("relu"))
+#model.add(AveragePooling2D(pool_size=(2, 2)))
 
 # first (and only) set of FC => RELU layers
 model.add(Flatten())
+model.add(Dense(128))
+model.add(Activation("relu"))
 model.add(Dense(256))
 model.add(Activation("relu"))
 #model.add(BatchNormalization())
@@ -150,14 +152,14 @@ model.add(Dense(cnn.data.n_output_neurons))
 model.add(Activation("softmax"))
 
 
-cnn.build_model(model)
+cnn.build_model()
 
 cnn.train_models()
 
-cnn.eval_model()
+#cnn.eval_model()
 
-cnn.plot_metrics()
-cnn.plot_confusion_matrix(norm_matrix = True)
+#cnn.plot_metrics()
+#cnn.plot_confusion_matrix(norm_matrix = True)
 '''
 cnn.plot_prenet_nodes()
 cnn.plot_class_differences()
