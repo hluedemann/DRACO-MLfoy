@@ -36,7 +36,7 @@ workpath = "/ceph/hluedemann/DRACO-MLfoy/workdir"
 key = sys.argv[1]
 
 inPath   = workpath + "/train_samples"
-savepath = workpath + "/hist2D_1_"+str(key)+"/"
+savepath = workpath + "/hist2D_1_"+str(key)
 
 # Define the models
 cnn_dnn = CNN_DNN.CNN_DNN(
@@ -46,7 +46,7 @@ cnn_dnn = CNN_DNN.CNN_DNN(
     event_category      = categories[key],
     train_variables     = category_vars[key],
     batch_size          = 5000,
-    train_epochs        = 2,
+    train_epochs        = 20,
     early_stopping      = 5,
     optimizer           = "adam",
     test_percentage     = 0.2,
@@ -61,7 +61,7 @@ dnn = DNN.DNN(
     event_classes   = event_classes,
     event_category  = categories[key],
     train_variables = category_vars[key],
-    train_epochs    = 2,
+    train_epochs    = 500,
     early_stopping  = 20,
     eval_metrics    = ["acc"])
 
@@ -186,7 +186,7 @@ plt.ylabel("Prediction DNN", fontsize=14)
 correlation_matrix = np.corrcoef(predict_classes_cnn_dnn, predict_classes_dnn)
 plt.annotate("Correlation: {:.3f}".format(correlation_matrix[0][1]), (0,0), (0, -40), xycoords='axes fraction', textcoords='offset points', va='top', fontsize=14)
 plt.colorbar()
-plt.savefig(savepath + "hist2d.pdf")
+plt.savefig(savepath + "/hist2d.pdf")
 
 # Plot the 2d hists of the one hot output for every class
 
@@ -214,4 +214,4 @@ for i in range(len(dnn.event_classes)):
     plt.colorbar()
 
     plt.plot(np.linspace(0, 1, 100), np.linspace(0, 1, 100), color='grey')
-    plt.savefig(savepath + "hist2d_prediction_class_{}.pdf".format(i+1))
+    plt.savefig(savepath + "/hist2d_prediction_class_{}.pdf".format(i+1))

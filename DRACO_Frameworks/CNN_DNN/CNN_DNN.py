@@ -190,32 +190,34 @@ class CNN_DNN():
         ''' default Aachen-DNN model as used in the analysis '''
         modelCNN = models.Sequential()
 
-        modelCNN.add(Conv2D(32, (4, 4), padding="same", input_shape = self.data.size_input_image))
+        modelCNN.add(Conv2D(32, (6, 6), padding="same", input_shape = self.data.size_input_image))
         modelCNN.add(Activation("relu"))
         modelCNN.add(AveragePooling2D(pool_size=(2,2)))
 
-        modelCNN.add(Conv2D(64, (4, 4), padding="same"))
+        modelCNN.add(Conv2D(64, (6, 6), padding="same"))
         modelCNN.add(Activation("relu"))
         modelCNN.add(AveragePooling2D(pool_size=(2, 2)))
-        modelCNN.add(Conv2D(128, (4, 4), padding="same"))
+        modelCNN.add(Conv2D(128, (6, 6), padding="same"))
         modelCNN.add(Activation("relu"))
         modelCNN.add(AveragePooling2D(pool_size=(2, 2)))
         modelCNN.add(Flatten())
 
         modelDNN = models.Sequential()
         modelDNN.add(Dense(100, input_shape = (self.data.n_input_neurons,)))
-        modelDNN.add(Activation("relu"))
-        modelDNN.add(Dropout(0.5))
-        modelDNN.add(Dense(100))
-        modelDNN.add(Activation("relu"))
-        modelDNN.add(Dropout(0.5))
+
+        # modelDNN.add(Activation("relu"))
+        # modelDNN.add(Dropout(0.5))
+        # modelDNN.add(Dense(100))
+        # modelDNN.add(Activation("relu"))
+        # modelDNN.add(Dropout(0.5))
 
 
         mergedOutput = layer.Concatenate()([modelCNN.output, modelDNN.output])
 
         out = Dense(100, activation='relu')(mergedOutput)
-        out = Dropout(0.5)(out)
+        out = Dropout(0.3)(out)
         out = Dense(100, activation='relu')(out)
+        out = Dropout(0.3)(out)
         out = Dense(self.data.n_output_neurons, activation='softmax')(out)
 
         mergedModel = models.Model([modelCNN.input, modelDNN.input], out)
@@ -254,7 +256,7 @@ class CNN_DNN():
         ''' train prenet first then the main net '''
 
         # checkpoint files
-        cp_path = self.save_path + "/checkpoints/"
+        cp_path = self.save_path + "/checkpoints"
         if not os.path.exists(cp_path):
             os.makedirs(cp_path)
 
@@ -367,7 +369,7 @@ class CNN_DNN():
 
 
 
-    def plot_confusion_matrix(self, norm_matrix = True):
+    def plot_confusion_matrix(self, savePath = None, norm_matrix = True):
         ''' generate confusion matrix '''
         n_classes = self.confusion_matrix.shape[0]
 
@@ -422,7 +424,11 @@ class CNN_DNN():
 
         plt_axis.set_aspect("equal")
 
-        out_path = self.save_path + "/confusion_matrix.pdf"
+        if savePath == None:
+            out_path = self.save_path + "/confusion_matrix.pdf"
+        else:
+            out_path = savePath
+            
         plt.savefig(out_path)
         print("saved confusion matrix at "+str(out_path))
         plt.clf()

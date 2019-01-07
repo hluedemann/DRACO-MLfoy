@@ -16,9 +16,14 @@ from keras.layers.core import Dropout
 from keras.layers.core import Dense
 
 # Limit gpu usage
+# config = tf.ConfigProto()
+# config.gpu_options.allow_growth = True
+# set_session(tf.Session(config=config))
+
 config = tf.ConfigProto()
-config.gpu_options.allow_growth = True
+config.gpu_options.per_process_gpu_memory_fraction = 0.5
 set_session(tf.Session(config=config))
+
 
 import matplotlib
 matplotlib.use('Agg')
@@ -127,7 +132,7 @@ class CNN_DNN_PRE():
         self.data = self._load_datasets()
         self.data.get_train_data_cnn
         #print(self.data.get_train_data_cnn.values)
-        out_path = self.save_path+"/checkpoints"
+        out_path = self.save_path+"/checkpoints/"
         if not os.path.exists(out_path):
             os.makedirs(out_path)
         out_file = out_path+"/variable_norm.csv"
@@ -195,22 +200,22 @@ class CNN_DNN_PRE():
             name = "input"
         )
 
-        x = layer.Conv2D(32, kernel_size = (4,4),
+        x = layer.Conv2D(32, kernel_size = (6,6),
                 activation = "relu",
                 padding = "same")(inputs)
         x = layer.AveragePooling2D( pool_size = (2,2), padding = "same" )(x)
 
-        x = layer.Conv2D(64, kernel_size = (4,4),
+        x = layer.Conv2D(64, kernel_size = (6,6),
                 activation = "relu",
                 padding = "same")(x)
         x = layer.AveragePooling2D( pool_size = (2,2), padding = "same" )(x)
 
-        x = layer.Conv2D(128, kernel_size = (4,4),
+        x = layer.Conv2D(128, kernel_size = (6,6),
                 activation = "relu",
                 padding = "same")(x)
         x = layer.AveragePooling2D( pool_size = (2,2), padding = "same" )(x)
 
-        x = layer.Conv2D(256, kernel_size = (4,4),
+        x = layer.Conv2D(256, kernel_size = (6,6),
                 activation = "relu",
                 padding = "same")(x)
         x = layer.AveragePooling2D( pool_size = (2,2), padding = "same" )(x)
@@ -222,7 +227,7 @@ class CNN_DNN_PRE():
         x = layer.Dense(128, activation = "relu")(x)
         x = layer.Dropout(0.5)(x)
 
-        outputs = layer.Dense(self.data.number_jet_categories)(x)
+        outputs = layer.Dense(self.data.number_jet_categories, activation = "softmax")(x)
 
         pre_net = models.Model(input = [inputs], outputs = [outputs])
         pre_net.summary()
@@ -234,12 +239,14 @@ class CNN_DNN_PRE():
                 name = "main_input")
 
         y = layer.Concatenate()([main_input, pre_net.output])
-        y = layer.Dense(128, activation="relu")(y)
+        y = layer.Dense(100, activation="relu")(y)
         y = layer.Dropout(0.5)(y)
-        y = layer.Dense(128, activation = "relu")(y)
+        y = layer.Dense(100, activation = "relu")(y)
+        y = layer.Dropout(0.5)(y)
         y = layer.Dense(self.data.n_output_neurons, activation = "softmax")(y)
 
         main_net = models.Model(input = [inputs, main_input], outputs = [y])
+        main_net.summary()
 
         return pre_net, main_net
 
@@ -291,7 +298,7 @@ class CNN_DNN_PRE():
         ''' train prenet first then the main net '''
 
         # checkpoint files
-        cp_path = self.save_path + "/checkpoints/"
+        cp_path = self.save_path + "/checkpoints"
         if not os.path.exists(cp_path):
             os.makedirs(cp_path)
 
@@ -325,19 +332,20 @@ class CNN_DNN_PRE():
         for layer in self.pre_net.layers:
             layer.trainable = False
 
-        out_file = cp_path + "/trained_pre_net.h5py"
+        out_file = cp_path + "trained_pre_net.h5py"
         self.pre_net.save(out_file)
         print("saved trained prenet model at "+str(out_file))
 
         prenet_config = self.pre_net.get_config()
-        out_file = cp_path +"/trained_pre_net_config"
+        out_file = cp_path +"trained_pre_net_config"
         with open(out_file, "w") as f:
             f.write( str(prenet_config))
         print("saved prenet model config at "+str(out_file))
 
-        out_file = cp_path +"/trained_pre_net_weights.h5"
+        out_file = cp_path +"trained_pre_net_weights.h5"
         self.pre_net.save_weights(out_file)
         print("wrote trained prenet weights to "+str(out_file))
+
 
         # add early stopping if activated
         callbacks = None
@@ -352,27 +360,27 @@ class CNN_DNN_PRE():
         # train main net
         print("Training main net .....")
         self.trained_main_net = self.main_net.fit(
-            x = [self.data.get_train_data_cnn, self.data.get_train_data(as_matrix = True)],
+            x = [self.data.get_train_data_cnn(), self.data.get_train_data(as_matrix = True)],
             y = self.data.get_train_labels(),
             batch_size = self.batch_size,
-            epochs = self.train_epochs + 20,
+            epochs = self.train_epochs + 10,
             shuffle = True,
             validation_split = 0.25,
             sample_weight = self.data.get_train_weights())
 
 
         # save trained model
-        out_file = cp_path + "/trained_main_net.h5py"
+        out_file = cp_path + "trained_main_net.h5py"
         self.main_net.save(out_file)
         print("saved trained model at "+str(out_file))
 
         mainnet_config = self.main_net.get_config()
-        out_file = cp_path + "/trained_main_net_config"
+        out_file = cp_path + "trained_main_net_config"
         with open(out_file, "w") as f:
             f.write( str(mainnet_config))
         print("saved model config at "+str(out_file))
 
-        out_file = cp_path +"/trained_main_net_weights.h5"
+        out_file = cp_path +"trained_main_net_weights.h5"
         self.main_net.save_weights(out_file)
         print("wrote trained weights to "+str(out_file))
 
@@ -402,7 +410,7 @@ class CNN_DNN_PRE():
 
         # main net evaluation
         self.mainnet_eval = self.main_net.evaluate(
-            [self.data.get_test_data_cnn, self.data.get_test_data(as_matrix = True)],
+            [self.data.get_test_data_cnn(), self.data.get_test_data(as_matrix = True)],
             self.data.get_test_labels())
 
         # save history of eval metrics
@@ -410,7 +418,7 @@ class CNN_DNN_PRE():
 
         # save predictions
         self.mainnet_predicted_vector = self.main_net.predict(
-            [self.data.get_test_data_cnn, self.data.get_test_data(as_matrix = True)] )
+            [self.data.get_test_data_cnn(), self.data.get_test_data(as_matrix = True)] )
 
         # save predicted classes with argmax
         self.predicted_classes = np.argmax( self.mainnet_predicted_vector, axis = 1)

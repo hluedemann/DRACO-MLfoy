@@ -65,7 +65,7 @@ else:
 key = sys.argv[1]
 
 inPath   = workpath + "/train_samples"
-savepath = workpath + "/CNN_DNN_version_2_2_"+str(key)+""
+savepath = workpath + "/CNN_DNN_V6_"+str(key)+""
 
 
 cnn_dnn = CNN_DNN.CNN_DNN(
@@ -87,16 +87,21 @@ cnn_dnn = CNN_DNN.CNN_DNN(
 
 modelCNN = models.Sequential()
 
-modelCNN.add(Conv2D(64, (4, 4), padding="same", input_shape = cnn_dnn.data.size_input_image))
-modelCNN.add(Activation("relu"))
-modelCNN.add(AveragePooling2D(pool_size=(2,2)))
 
-modelCNN.add(Conv2D(32, (4, 4), padding="same"))
+modelCNN.add(Conv2D(128, (5, 5), padding="same", input_shape = cnn_dnn.data.size_input_image))
 modelCNN.add(Activation("relu"))
-modelCNN.add(AveragePooling2D(pool_size=(2, 2)))
-modelCNN.add(Conv2D(16, (4, 4), padding="same"))
+modelCNN.add(MaxPooling2D(pool_size=(2,2)))
+
+modelCNN.add(Conv2D(64, (4, 4), padding="same"))
 modelCNN.add(Activation("relu"))
-modelCNN.add(AveragePooling2D(pool_size=(2, 2)))
+modelCNN.add(MaxPooling2D(pool_size=(2,2)))
+
+modelCNN.add(Conv2D(32, (3, 3), padding="same"))
+modelCNN.add(Activation("relu"))
+modelCNN.add(MaxPooling2D(pool_size=(2, 2)))
+modelCNN.add(Conv2D(16, (2, 2), padding="same"))
+modelCNN.add(Activation("relu"))
+modelCNN.add(MaxPooling2D(pool_size=(2, 2)))
 modelCNN.add(Flatten())
 
 modelDNN = models.Sequential()
@@ -112,9 +117,9 @@ modelDNN.add(Dense(100, input_shape = (cnn_dnn.data.n_input_neurons,)))
 mergedOutput = layer.Concatenate()([modelCNN.output, modelDNN.output])
 
 out = Dense(100, activation='relu')(mergedOutput)
-out = Dropout(0.5)(out)
+out = Dropout(0.3)(out)
 out = Dense(100, activation='relu')(out)
-out = Dropout(0.5)(out)
+out = Dropout(0.3)(out)
 out = Dense(cnn_dnn.data.n_output_neurons, activation='softmax')(out)
 
 mergedModel = models.Model([modelCNN.input, modelDNN.input], out)

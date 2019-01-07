@@ -743,7 +743,7 @@ class DNN():
 
 
 
-    def plot_confusion_matrix(self, norm_matrix = True):
+    def plot_confusion_matrix(self, savePath = None, norm_matrix = True):
         ''' generate confusion matrix '''
         n_classes = self.confusion_matrix.shape[0]
 
@@ -798,7 +798,11 @@ class DNN():
 
         plt_axis.set_aspect("equal")
 
-        out_path = self.save_path + "/confusion_matrix.pdf"
+        if savePath == None:
+            out_path = self.save_path + "/confusion_matrix.pdf"
+        else:
+            out_path = savePath
+
         plt.savefig(out_path)
         print("saved confusion matrix at "+str(out_path))
         plt.clf()

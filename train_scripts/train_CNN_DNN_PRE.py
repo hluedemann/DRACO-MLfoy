@@ -65,7 +65,7 @@ else:
 key = sys.argv[1]
 
 inPath   = workpath + "/train_samples"
-savepath = workpath + "/CNN_DNN_version_2_2_"+str(key)+""
+savepath = workpath + "/CNN_DNN_PRE_6X6_"+str(key)+""
 
 
 cnn_dnn_pre = CNN_DNN_PRE.CNN_DNN_PRE(
@@ -75,7 +75,7 @@ cnn_dnn_pre = CNN_DNN_PRE.CNN_DNN_PRE(
     event_category      = categories[key],
     train_variables     = category_vars[key],
     batch_size          = 5000,
-    train_epochs        = 15,
+    train_epochs        = 10,
     early_stopping      = 5,
     optimizer           = "adam",
     test_percentage     = 0.2,

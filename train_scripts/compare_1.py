@@ -36,7 +36,7 @@ workpath = "/ceph/hluedemann/DRACO-MLfoy/workdir"
 key = sys.argv[1]
 
 inPath   = workpath + "/train_samples"
-savepath = workpath + "/compare_1_"+str(key)
+savepath = workpath + "/compare_2_"+str(key)
 
 # Define the models
 cnn_dnn = CNN_DNN.CNN_DNN(
@@ -46,7 +46,7 @@ cnn_dnn = CNN_DNN.CNN_DNN(
     event_category      = categories[key],
     train_variables     = category_vars[key],
     batch_size          = 5000,
-    train_epochs        = 2,
+    train_epochs        = 10,
     early_stopping      = 5,
     optimizer           = "adam",
     test_percentage     = 0.2,
@@ -60,7 +60,7 @@ dnn = DNN.DNN(
     event_classes   = event_classes,
     event_category  = categories[key],
     train_variables = category_vars[key],
-    train_epochs    = 2,
+    train_epochs    = 500,
     early_stopping  = 20,
     eval_metrics    = ["acc"])
 
@@ -150,7 +150,7 @@ def plot_confusion_matrix(confusion_matrix,
 # Run the dnn and dnn_aachen for num_runs train_samples and store the
 # confusion matrix and the auc score for every run
 
-num_runs = 1
+num_runs = 5
 cm_dnn = []
 cm_cnn_dnn = []
 auc_score_dnn = []
@@ -165,14 +165,16 @@ for i in range(0, num_runs):
     dnn.train_model()
     dnn.eval_model()
 
-    print(dnn.confusion_matrix)
-    print(dnn.confusion_matrix.shape)
+    dnn.plot_confusion_matrix(savePath = savepath + "/confusion_matrix_dnn_{}.pdf".format(i), norm_matrix = True)
+
     cm_dnn.append(dnn.confusion_matrix)
     auc_score_dnn.append(dnn.roc_auc_score)
 
     cnn_dnn.build_model()
     cnn_dnn.train_models()
     cnn_dnn.eval_model()
+
+    cnn_dnn.plot_confusion_matrix(savePath = savepath + "/confusion_matrix_cnn_dnn_{}.pdf".format(i), norm_matrix = True)
 
     cm_cnn_dnn.append(cnn_dnn.confusion_matrix)
     auc_score_cnn_dnn.append(cnn_dnn.main_roc_score)
