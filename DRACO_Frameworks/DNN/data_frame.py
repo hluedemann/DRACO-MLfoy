@@ -1,14 +1,12 @@
 import pandas as pd
-import numpy as np
-from sklearn.utils import shuffle
 from keras.utils import to_categorical
+from sklearn.utils import shuffle
 
-import matplotlib.pyplot as plt
 
 class DataFrame(object):
-    def __init__(self, path_to_input_files, 
-                classes, event_category, 
-                train_variables, prenet_targets,
+    def __init__(self, path_to_input_files,
+                classes, event_category,
+                train_variables,
                 test_percentage = 0.1,
                 norm_variables = False,
                 additional_cut = None,
@@ -21,14 +19,13 @@ class DataFrame(object):
             the dataset is shuffled and split into a test and train sample
                 according to test_percentage
             for better training, the variables can be normed to std(1) and mu(0) '''
-        
+
         # loop over all classes and extract data as well as event weights
         class_dataframes = list()
         for cls in classes:
-            class_file = path_to_input_files + "/" + cls + ".h5"
+            class_file = path_to_input_files + "/" + cls + "_dnn.h5"
             print("-"*50)
             print("loading class file "+str(class_file))
-
             with pd.HDFStore( class_file, mode = "r" ) as store:
                 cls_df = store.select("data")
                 print("number of events before selections: "+str(cls_df.shape[0]))
@@ -40,7 +37,7 @@ class DataFrame(object):
 
             # add event weight
             cls_df = cls_df.assign(total_weight = lambda x: x.Weight_XS * x.Weight_CSV * x.Weight_GEN_nom)
-            
+
             weight_sum = sum(cls_df["total_weight"].values)
             class_weight_scale = 1.
             if "ttH" in cls: class_weight_scale *= 1.0
@@ -67,15 +64,14 @@ class DataFrame(object):
         self.classes = classes
         self.index_classes = [self.class_translation[c] for c in classes]
 
-        df["index_label"] = pd.Series( [self.class_translation[c] for c in df["class_label"].values], index = df.index )
         df["is_ttH"] = pd.Series( [1 if c=="ttHbb" else 0 for c in df["class_label"].values], index = df.index )
+        df["index_label"] = pd.Series( [self.class_translation[c] for c in df["class_label"].values], index = df.index )
 
         # norm weights to mean(1)
         df["train_weight"] = df["train_weight"]*df.shape[0]/len(classes)
 
         # save some meta data about net
         self.n_input_neurons = len(train_variables)
-        self.n_prenet_output_neurons = len(prenet_targets)
         self.n_output_neurons = len(classes)
 
         # shuffle dataframe
@@ -111,7 +107,6 @@ class DataFrame(object):
 
         # save variable lists
         self.train_variables = train_variables
-        self.prenet_targets = prenet_targets
         self.output_classes = classes
 
 
@@ -124,12 +119,10 @@ class DataFrame(object):
         return self.df_train["train_weight"].values
 
     def get_train_labels(self, as_categorical = True):
-        if as_categorical: return to_categorical( self.df_train["index_label"].values )      
+        if as_categorical: return to_categorical( self.df_train["index_label"].values )
         else:              return self.df_train["index_label"].values
 
-    def get_prenet_train_labels(self):
-        return self.df_train[ self.prenet_targets ].values
-        
+
     # test data ------------------------------------
     def get_test_data(self, as_matrix = True, normed = True):
         if not normed: return self.df_test_unnormed[ self.train_variables ]
@@ -139,14 +132,14 @@ class DataFrame(object):
     def get_test_weights(self):
         return self.df_test["total_weight"].values
     def get_lumi_weights(self):
-        return self.df_test["lumi_weight"].values 
+        return self.df_test["lumi_weight"].values
 
     def get_test_labels(self, as_categorical = True):
         if as_categorical: return to_categorical( self.df_test["index_label"].values )
         else:              return self.df_test["index_label"].values
 
-    def get_prenet_test_labels(self, as_matrix = True):
-        return self.df_test[ self.prenet_targets ].values
+    def get_class_flag(self, class_label):
+        return pd.Series( [1 if c==class_label else 0 for c in self.df_test["class_label"].values], index = self.df_test.index ).values
 
     def get_ttH_flag(self):
         return self.df_test["is_ttH"].values
@@ -154,5 +147,3 @@ class DataFrame(object):
     # full sample ----------------------------------
     def get_full_df(self):
         return self.unsplit_df[self.train_variables]
-
-

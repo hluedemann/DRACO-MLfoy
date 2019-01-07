@@ -20,7 +20,7 @@ hdfConfig = preproc.HDFConfig(
     etaRange    = eta_range,
     phiRange    = phi_range,       
     # pixel intensity linear or logarithmic
-    logNorm     = True)
+    logNorm     = False)
 
 inFile = sys.argv[1]
 outFile = sys.argv[2]
