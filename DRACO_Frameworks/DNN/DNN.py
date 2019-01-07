@@ -1,3 +1,4 @@
+
 import os
 import sys
 import numpy as np
@@ -17,10 +18,6 @@ import utils.generateJTcut as JTcut
 import architecture as arch
 import data_frame
 
-import keras
-import keras.models as models
-import keras.layers as layer
-from keras import backend as K
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -30,7 +27,6 @@ import tensorflow as tf
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
 K.tensorflow_backend.set_session(tf.Session(config=config))
-
 
 
 
@@ -87,6 +83,7 @@ class DNN():
         # list of classes
         self.event_classes = event_classes
         # name of event category (usually nJet/nTag category)
+
         self.JTstring       = event_category
         self.event_category = JTcut.getJTstring(event_category)
         self.categoryLabel  = JTcut.getJTlabel(event_category)
@@ -113,6 +110,7 @@ class DNN():
 
         # load data set
         self.data = self._load_datasets()
+
         self.cp_path = self.save_path+"/checkpoints/"
         if not os.path.exists(self.cp_path):
             os.makedirs(self.cp_path)
@@ -150,6 +148,7 @@ class DNN():
 
     def load_trained_model(self):
         ''' load an already trained model '''
+
         checkpoint_path = self.cp_path + "/trained_model.h5py"
 
         self.model = keras.models.load_model(checkpoint_path)
@@ -164,12 +163,16 @@ class DNN():
         self.predicted_classes = np.argmax( self.model_prediction_vector, axis = 1)
 
         # save confusion matrix
+
         from sklearn.metrics import confusion_matrix
+
         self.confusion_matrix = confusion_matrix(
             self.data.get_test_labels(as_categorical = False), self.predicted_classes)
 
         # print evaluations
+
         from sklearn.metrics import roc_auc_score
+
         self.roc_auc_score = roc_auc_score(self.data.get_test_labels(), self.model_prediction_vector)
         print("ROC-AUC score: {}".format(self.roc_auc_score))
 
@@ -177,6 +180,7 @@ class DNN():
             print("model test loss: {}".format(self.model_eval[0]))
             for im, metric in enumerate(self.eval_metrics):
                 print("model test {}: {}".format(metric, self.model_eval[im+1]))
+
 
     def predict_event_query(self, query ):
         events = self.data.get_full_df().query( query )
@@ -250,6 +254,7 @@ class DNN():
 
         # compile the model
         model.compile(
+
             loss = self.architecture["loss_function"],
             optimizer = self.optimizer,
             metrics = self.eval_metrics)
@@ -288,6 +293,7 @@ class DNN():
             validation_split = 0.25,
             sample_weight = self.data.get_train_weights())
 
+
         self.save_model()
 
     def save_model(self):
@@ -297,12 +303,16 @@ class DNN():
         print("saved trained model at "+str(out_file))
 
         model_config = self.model.get_config()
+
         out_file = self.cp_path +"/trained_model_config"
+
         with open(out_file, "w") as f:
             f.write( str(model_config))
         print("saved model config at "+str(out_file))
 
+
         out_file = self.cp_path +"/trained_model_weights.h5"
+
         self.model.save_weights(out_file)
         print("wrote trained weights to "+str(out_file))
 
@@ -313,11 +323,14 @@ class DNN():
 
         K.set_learning_phase(False)
 
+
         out_file = self.cp_path + "/trained_model"
         sess = K.get_session()
+
         saver = tf.train.Saver()
         save_path = saver.save(sess, out_file)
         print("saved checkpoint files to "+str(out_file))
+
 
         # produce json file with configs
         configs = self.architecture
@@ -329,6 +342,7 @@ class DNN():
         with open(json_file, "w") as jf:
             json.dump(configs, jf, indent = 2, separators = (",", ": "))
         print("wrote net configs to "+str(json_file))
+
 
 
     def eval_model(self):
@@ -350,12 +364,15 @@ class DNN():
         self.predicted_classes = np.argmax( self.model_prediction_vector, axis = 1)
 
         # save confusion matrix
+
         from sklearn.metrics import confusion_matrix
+
         self.confusion_matrix = confusion_matrix(
             self.data.get_test_labels(as_categorical = False), self.predicted_classes)
 
         # print evaluations
         from sklearn.metrics import roc_auc_score
+
         self.roc_auc_score = roc_auc_score(self.data.get_test_labels(), self.model_prediction_vector)
         print("ROC-AUC score: {}".format(self.roc_auc_score))
 
@@ -363,6 +380,7 @@ class DNN():
             print("model test loss: {}".format(self.model_eval[0]))
             for im, metric in enumerate(self.eval_metrics):
                 print("model test {}: {}".format(metric, self.model_eval[im+1]))
+
 
     def save_confusionMatrix(self, location, save_roc):
         ''' save confusion matrix as a line in output file '''
@@ -401,6 +419,7 @@ class DNN():
 
     def plot_metrics(self):
         ''' plot history of loss function and evaluation metrics '''
+
         metrics = ["loss"]
         if self.eval_metrics: metrics += self.eval_metrics
 
@@ -414,8 +433,8 @@ class DNN():
 
             plt.plot(epochs, train_history, "b-", label = "train", lw = 2)
             plt.plot(epochs, val_history, "r-", label = "validation", lw = 2)
-            plt.title(self.categoryLabel.replace("\\geq",">="), loc = "right")
 
+            plt.title(self.categoryLabel.replace("\\geq",">="), loc = "right")
             plt.grid()
             plt.xlabel("epoch")
             plt.ylabel(metric)
@@ -425,6 +444,7 @@ class DNN():
             out_path = self.save_path + "/model_history_"+str(metric)+".pdf"
             plt.savefig(out_path)
             print("saved plot of "+str(metric)+" at "+str(out_path))
+
 
 
 
@@ -478,7 +498,9 @@ class DNN():
         input_data = self.data.get_test_data(as_matrix = False, normed = False)
 
         # initialize empty dataframe
+
         df = pd.DataFrame()
+
         plt.figure(figsize = [10,10])
 
         # correlation plot path
@@ -527,7 +549,9 @@ class DNN():
                 corr_values[var] = correlation
 
             # save correlation value to dataframe
+
             df[cls] = pd.Series( corr_values )
+
 
         # save dataframe of correlations
         out_path = self.save_path + "/correlation_matrix.h5"
@@ -562,7 +586,9 @@ class DNN():
                     plt.colorbar()
 
                     plt.title("corr = {}".format(corr), loc = "left")
+
                     plt.title(self.categoryLabel, loc = "right")
+
 
                     plt.xlabel(xcls+" output node")
                     plt.ylabel(ycls+" output node")
@@ -591,6 +617,7 @@ class DNN():
         plt.xlabel("output nodes")
         plt.ylabel("output nodes")
 
+
         plt.title(self.categoryLabel, loc = "right")
 
         # add textlabel
@@ -615,6 +642,7 @@ class DNN():
         print("saved output correlation at "+str(out_path))
         plt.clf()
 
+
     def plot_confusionMatrix(self, norm_matrix = True):
         ''' plot confusion matrix '''
         plotCM = plottingScripts.plotConfusionMatrix(
@@ -627,3 +655,6 @@ class DNN():
         plotCM.set_printROCScore(True)
 
         plotCM.plot(norm_matrix = norm_matrix)
+
+
+

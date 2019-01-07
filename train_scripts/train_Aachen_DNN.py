@@ -66,3 +66,7 @@ dnn_aachen.plot_class_differences()
 dnn_aachen.plot_discriminators()
 dnn_aachen.plot_classification()
 dnn_aachen.plot_confusion_matrix()
+
+dnn_aachen.plot_output_output_correlation(plot=True)
+dnn_aachen.plot_input_output_correlation(plot=False)
+
