@@ -1,4 +1,3 @@
-
 import os
 import sys
 import numpy as np
@@ -18,6 +17,10 @@ import utils.generateJTcut as JTcut
 import architecture as arch
 import data_frame
 
+import keras
+import keras.models as models
+import keras.layers as layer
+from keras import backend as K
 import matplotlib.pyplot as plt
 import pandas as pd
 

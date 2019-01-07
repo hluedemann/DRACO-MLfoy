@@ -35,13 +35,13 @@ prenet_targets = [
 event_classes = ["ttHbb", "ttbb", "tt2b", "ttb", "ttcc", "ttlf"]
 
 if "naf" in socket.gethostname():
-    workpath = "/nfs/dust/cms/user/vdlinden/DRACO-MLfoy/workdir/"
+    workpath = "/nfs/dust/cms/user/hluedemann/DRACO-MLfoy/workdir/"
 else:
-    workpath = "/ceph/vanderlinden/DRACO-MLfoy/workdir/"
+    workpath = "/ceph/hluedemann/DRACO-MLfoy/workdir"
 
 key = sys.argv[1]
 
-inPath   = workpath + "/AachenDNN_files"
+inPath   = workpath + "/train_samples"
 savepath = workpath + "/AachenDNN_"+str(key)+"/"
 
 dnn_aachen = DNN_Aachen.DNN(

@@ -25,7 +25,7 @@ class DataFrame(object):
         # loop over all classes and extract data as well as event weights
         class_dataframes = list()
         for cls in classes:
-            class_file = path_to_input_files + "/" + cls + ".h5"
+            class_file = path_to_input_files + "/" + cls + "_cnn.h5"
             print("-"*50)
             print("loading class file "+str(class_file))
 
