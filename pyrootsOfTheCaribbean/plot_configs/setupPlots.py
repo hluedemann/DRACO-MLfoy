@@ -104,7 +104,10 @@ def draw2DHistOnCanvas(hist, canvasName, catLabel, ROC = None, ROCerr = None):
 
     # draw histogram
     #ROOT.gStyle.SetPalette(69)
-    hist.DrawCopy("colz text1e")
+    if ROCerr:
+        hist.DrawCopy("colz text1e")
+    else:
+        hist.DrawCopy("colz text1")
 
     # setup TLatex
     latex = ROOT.TLatex()

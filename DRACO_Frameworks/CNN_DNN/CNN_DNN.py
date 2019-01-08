@@ -42,48 +42,48 @@ K.tensorflow_backend.set_session(tf.Session(config=config))
 
 
 class EarlyStoppingByLossDiff(keras.callbacks.Callback):
-    def __init__(self, monitor = "loss", value = 0.01, min_epochs = 20, patience = 10, verbose = 0):
-        super(keras.callbacks.Callback, self).__init__()
-        self.val_monitor = "val_"+monitor
-        self.train_monitor = monitor
-        self.patience = patience
-        self.n_failed = 0
+	def __init__(self, monitor = "loss", value = 0.01, min_epochs = 20, patience = 10, verbose = 0):
+		super(keras.callbacks.Callback, self).__init__()
+		self.val_monitor = "val_"+monitor
+		self.train_monitor = monitor
+		self.patience = patience
+		self.n_failed = 0
 
-        self.min_epochs = min_epochs
-        self.value = value
-        self.verbose = verbose
+		self.min_epochs = min_epochs
+		self.value = value
+		self.verbose = verbose
 
-    def on_epoch_end(self, epoch, logs = {}):
-        current_val = logs.get(self.val_monitor)
-        current_train = logs.get(self.train_monitor)
+	def on_epoch_end(self, epoch, logs = {}):
+		current_val = logs.get(self.val_monitor)
+		current_train = logs.get(self.train_monitor)
 
-        if current_val is None or current_train is None:
-            warnings.warn("Early stopping requires {} and {} available".format(
-                self.val_monitor, self.train_monitor), RuntimeWarning)
+		if current_val is None or current_train is None:
+			warnings.warn("Early stopping requires {} and {} available".format(
+				self.val_monitor, self.train_monitor), RuntimeWarning)
 
-        if abs(current_val-current_train)/(current_train) > self.value and epoch > self.min_epochs:
-            if self.verbose > 0:
-                print("Epoch {}: early stopping threshold reached".format(epoch))
-            self.n_failed += 1
-            if self.n_failed > self.patience:
-                self.model.stop_training = True
+		if abs(current_val-current_train)/(current_train) > self.value and epoch > self.min_epochs:
+			if self.verbose > 0:
+				print("Epoch {}: early stopping threshold reached".format(epoch))
+			self.n_failed += 1
+			if self.n_failed > self.patience:
+				self.model.stop_training = True
 
 
 
 class CNN_DNN():
-    def __init__(self, in_path, save_path,
-                event_classes,
-                event_category,
-                train_variables,
-                batch_size = 5000,
-                train_epochs = 500,
-                early_stopping = 10,
-                optimizer = None,
-                loss_function = "categorical_crossentropy",
-                test_percentage = 0.2,
-                eval_metrics = None,
-                additional_cut = None,
-                phi_padding = 0):
+	def __init__(self, in_path, save_path,
+				event_classes,
+				event_category,
+				train_variables,
+				batch_size = 5000,
+				train_epochs = 500,
+				early_stopping = 10,
+				optimizer = None,
+				loss_function = "categorical_crossentropy",
+				test_percentage = 0.2,
+				eval_metrics = None,
+				additional_cut = None,
+				phi_padding = 0):
 
 		# save some information
 
@@ -152,46 +152,46 @@ class CNN_DNN():
 			self.optimizer = optimizer
 
 
-    def _load_datasets(self):
-        ''' load dataset '''
-        return data_frame.DataFrame(
-            path_to_input_files = self.in_path,
-            classes             = self.event_classes,
-            event_category      = self.event_category,
-            train_variables     = self.train_variables,
-            test_percentage     = self.test_percentage,
-            norm_variables      = True,
-            additional_cut      = self.additional_cut,
-            phi_padding         = self.phi_padding)
+	def _load_datasets(self):
+		''' load dataset '''
+		return data_frame.DataFrame(
+			path_to_input_files = self.in_path,
+			classes             = self.event_classes,
+			event_category      = self.event_category,
+			train_variables     = self.train_variables,
+			test_percentage     = self.test_percentage,
+			norm_variables      = True,
+			additional_cut      = self.additional_cut,
+			phi_padding         = self.phi_padding)
 
-    def load_trained_model(self):
-        ''' load an already trained model '''
-        checkpoint_path = self.save_path + "/checkpoints/model.h5py"
+	def load_trained_model(self):
+		''' load an already trained model '''
+		checkpoint_path = self.save_path + "/checkpoints/model.h5py"
 
-        self.model = keras.models.load_model(checkpoint_path)
+		self.model = keras.models.load_model(checkpoint_path)
 
-        self.model_eval = self.model.evaluate(
-            self.data.get_test_data(as_matrix = True),
-            self.data.get_test_labels())
+		self.model_eval = self.model.evaluate(
+			self.data.get_test_data(as_matrix = True),
+			self.data.get_test_labels())
 
-        self.model_predicted_vector = self.model.predict(
-            self.data.get_test_data(as_matrix = True))
+		self.model_predicted_vector = self.model.predict(
+			self.data.get_test_data(as_matrix = True))
 
-        self.predicted_classes = np.argmax( self.model_predicted_vector, axis = 1)
+		self.predicted_classes = np.argmax( self.model_predicted_vector, axis = 1)
 
-        # save confusion matrix
-        self.confusion_matrix = confusion_matrix(
-            self.data.get_test_labels(as_categorical = False), self.predicted_classes)
+		# save confusion matrix
+		self.confusion_matrix = confusion_matrix(
+			self.data.get_test_labels(as_categorical = False), self.predicted_classes)
 
-        # print evaluations
-        self.roc_auc_score = roc_auc_score(self.data.get_test_labels(), self.model_predicted_vector)
-        print("model test roc: {}".format(self.roc_auc_score))
-        if self.eval_metrics:
-            print("model test loss: {}".format(self.model[0]))
-            for im, metric in enumerate(self.eval_metrics):
-                print("model test {}: {}".format(metric, self.model_eval[im+1]))
+		# print evaluations
+		self.roc_auc_score = roc_auc_score(self.data.get_test_labels(), self.model_predicted_vector)
+		print("model test roc: {}".format(self.roc_auc_score))
+		if self.eval_metrics:
+			print("model test loss: {}".format(self.model[0]))
+			for im, metric in enumerate(self.eval_metrics):
+				print("model test {}: {}".format(metric, self.model_eval[im+1]))
 
-    def predict_event_query(self, query ):
+	def predict_event_query(self, query ):
 		events = self.data.get_full_df().query( query )
 		print(str(events.shape[0]) + " events matched the query '"+str(query)+"'.")
 
@@ -208,46 +208,46 @@ class CNN_DNN():
 
 
 
-    def build_default_model(self):
-        ''' default Aachen-DNN model as used in the analysis '''
-        modelCNN = models.Sequential()
+	def build_default_model(self):
+		''' default Aachen-DNN model as used in the analysis '''
+		modelCNN = models.Sequential()
 
-        modelCNN.add(Conv2D(32, (6, 6), padding="same", input_shape = self.data.size_input_image))
-        modelCNN.add(Activation("relu"))
-        modelCNN.add(AveragePooling2D(pool_size=(2,2)))
+		modelCNN.add(Conv2D(32, (6, 6), padding="same", input_shape = self.data.size_input_image))
+		modelCNN.add(Activation("relu"))
+		modelCNN.add(AveragePooling2D(pool_size=(2,2)))
 
-        modelCNN.add(Conv2D(64, (6, 6), padding="same"))
-        modelCNN.add(Activation("relu"))
-        modelCNN.add(AveragePooling2D(pool_size=(2, 2)))
-        modelCNN.add(Conv2D(128, (6, 6), padding="same"))
-        modelCNN.add(Activation("relu"))
-        modelCNN.add(AveragePooling2D(pool_size=(2, 2)))
-        modelCNN.add(Flatten())
+		modelCNN.add(Conv2D(64, (6, 6), padding="same"))
+		modelCNN.add(Activation("relu"))
+		modelCNN.add(AveragePooling2D(pool_size=(2, 2)))
+		modelCNN.add(Conv2D(128, (6, 6), padding="same"))
+		modelCNN.add(Activation("relu"))
+		modelCNN.add(AveragePooling2D(pool_size=(2, 2)))
+		modelCNN.add(Flatten())
 
-        modelDNN = models.Sequential()
-        modelDNN.add(Dense(100, input_shape = (self.data.n_input_neurons,)))
+		modelDNN = models.Sequential()
+		modelDNN.add(Dense(100, input_shape = (self.data.n_input_neurons,)))
 
-        # modelDNN.add(Activation("relu"))
-        # modelDNN.add(Dropout(0.5))
-        # modelDNN.add(Dense(100))
-        # modelDNN.add(Activation("relu"))
-        # modelDNN.add(Dropout(0.5))
-
-
-        mergedOutput = layer.Concatenate()([modelCNN.output, modelDNN.output])
-
-        out = Dense(100, activation='relu')(mergedOutput)
-        out = Dropout(0.3)(out)
-        out = Dense(100, activation='relu')(out)
-        out = Dropout(0.3)(out)
-        out = Dense(self.data.n_output_neurons, activation='softmax')(out)
-
-        mergedModel = models.Model([modelCNN.input, modelDNN.input], out)
-
-        return mergedModel
+		# modelDNN.add(Activation("relu"))
+		# modelDNN.add(Dropout(0.5))
+		# modelDNN.add(Dense(100))
+		# modelDNN.add(Activation("relu"))
+		# modelDNN.add(Dropout(0.5))
 
 
-    def build_model(self, model = None):
+		mergedOutput = layer.Concatenate()([modelCNN.output, modelDNN.output])
+
+		out = Dense(100, activation='relu')(mergedOutput)
+		out = Dropout(0.3)(out)
+		out = Dense(100, activation='relu')(out)
+		out = Dropout(0.3)(out)
+		out = Dense(self.data.n_output_neurons, activation='softmax')(out)
+
+		mergedModel = models.Model([modelCNN.input, modelDNN.input], out)
+
+		return mergedModel
+
+
+	def build_model(self, model = None):
 		''' build a DNN model
 		if none is specified use default model '''
 
@@ -272,132 +272,87 @@ class CNN_DNN():
 			f.write(yml_model)
 
 
-    def train_models(self):
-        ''' train prenet first then the model '''
+	def train_models(self):
+		''' train prenet first then the model '''
 
-        # checkpoint files
-        cp_path = self.save_path + "/checkpoints"
-        if not os.path.exists(cp_path):
-            os.makedirs(cp_path)
+		# checkpoint files
+		cp_path = self.save_path + "/checkpoints"
+		if not os.path.exists(cp_path):
+			os.makedirs(cp_path)
 
-        # add early stopping if activated
-        callbacks = None
-        if self.early_stopping:
-            callbacks = [EarlyStoppingByLossDiff(
-                monitor = "loss",
-                value = 0.01,
-                min_epochs = 100,
-                patience = 20,
-                verbose = 1)]
+		# add early stopping if activated
+		callbacks = None
+		if self.early_stopping:
+			callbacks = [EarlyStoppingByLossDiff(
+				monitor = "loss",
+				value = 0.01,
+				min_epochs = 100,
+				patience = 20,
+				verbose = 1)]
 
-        # train model
-        self.trained_model = self.model.fit(
-            x = [self.data.get_train_data_cnn(as_matrix = True), self.data.get_train_data(as_matrix=True)],
-            y = self.data.get_train_labels(),
-            batch_size = self.batch_size,
-            epochs = self.train_epochs,
-            shuffle = True,
-            callbacks = callbacks,
-            validation_split = 0.25,
-            sample_weight = self.data.get_train_weights()
-            )
+		# train model
+		self.trained_model = self.model.fit(
+			x = [self.data.get_train_data_cnn(as_matrix = True), self.data.get_train_data(as_matrix=True)],
+			y = self.data.get_train_labels(),
+			batch_size = self.batch_size,
+			epochs = self.train_epochs,
+			shuffle = True,
+			callbacks = callbacks,
+			validation_split = 0.25,
+			sample_weight = self.data.get_train_weights()
+			)
 
-        # save trained model
-        out_file = cp_path + "/trained_model.h5py"
-        self.model.save(out_file)
-        print("saved trained model at "+str(out_file))
+		# save trained model
+		out_file = cp_path + "/trained_model.h5py"
+		self.model.save(out_file)
+		print("saved trained model at "+str(out_file))
 
-        model_config = self.model.get_config()
-        out_file = cp_path + "/trained_model_config"
-        with open(out_file, "w") as f:
-            f.write( str(model_config))
-        print("saved model config at "+str(out_file))
+		model_config = self.model.get_config()
+		out_file = cp_path + "/trained_model_config"
+		with open(out_file, "w") as f:
+			f.write( str(model_config))
+		print("saved model config at "+str(out_file))
 
-        out_file = cp_path +"/trained_model_weights.h5"
-        self.model.save_weights(out_file)
-        print("wrote trained weights to "+str(out_file))
-
-	'''
-	def save_model(self):
-        # save trained model
-        out_file = self.cp_path + "/trained_model.h5py"
-        self.model.save(out_file)
-        print("saved trained model at "+str(out_file))
-
-        model_config = self.model.get_config()
-
-        out_file = self.cp_path +"/trained_model_config"
-
-        with open(out_file, "w") as f:
-            f.write( str(model_config))
-        print("saved model config at "+str(out_file))
+		out_file = cp_path +"/trained_model_weights.h5"
+		self.model.save_weights(out_file)
+		print("wrote trained weights to "+str(out_file))
 
 
-        out_file = self.cp_path +"/trained_model_weights.h5"
+	def eval_model(self):
+		''' evaluate trained model '''
 
-        self.model.save_weights(out_file)
-        print("wrote trained weights to "+str(out_file))
+		# model evaluation
+		self.model_eval = self.model.evaluate(
+			x = [self.data.get_test_data_cnn(as_matrix = True), self.data.get_test_data(as_matrix = True)],
+			y = self.data.get_test_labels())
 
-        # set model as non trainable
-        for layer in self.model.layers:
-            layer.trainable = False
-        self.model.trainable = False
+		# save history of eval metrics
+		self.model_history = self.trained_model.history
 
-        K.set_learning_phase(False)
+		# save predictions
+		self.model_predicted_vector = self.model.predict(
+			[self.data.get_test_data_cnn(as_matrix = True), self.data.get_test_data(as_matrix = True)])
+
+		# save predicted classes with argmax
+		self.predicted_classes = np.argmax( self.model_predicted_vector, axis = 1)
+
+		from sklearn.metrics import confusion_matrix
+		# save confusion matrix
+		self.confusion_matrix = confusion_matrix(
+			self.data.get_test_labels(as_categorical = False), self.predicted_classes)
+		from sklearn.metrics import roc_auc_score
+		# print evaluations
+		self.roc_auc_score = roc_auc_score(self.data.get_test_labels(), self.model_predicted_vector)
+		print("ROC-AUC score: {}".format(self.roc_auc_score))
+
+		if self.eval_metrics:
+			print("model test loss: {}".format(self.model_eval[0]))
+			for im, metric in enumerate(self.eval_metrics):
+				print("model test {}: {}".format(metric, self.model_eval[im+1]))
 
 
-        out_file = self.cp_path + "/trained_model"
-        sess = K.get_session()
-
-        saver = tf.train.Saver()
-        save_path = saver.save(sess, out_file)
-        print("saved checkpoint files to "+str(out_file))
 
 
-        # produce json file with configs
-        configs = self.architecture
-        configs["inputName"] = self.inputName
-        configs["outputName"] = self.outputName+"/"+configs["output_activation"]
-        configs = {key: configs[key] for key in configs if not "optimizer" in key}
-
-        json_file = self.cp_path + "/net_config.json"
-        with open(json_file, "w") as jf:
-            json.dump(configs, jf, indent = 2, separators = (",", ": "))
-        print("wrote net configs to "+str(json_file))
-        '''
-
-    def eval_model(self):
-        ''' evaluate trained model '''
-
-        # model evaluation
-        self.model_eval = self.model.evaluate(
-            x = [self.data.get_test_data_cnn(as_matrix = True), self.data.get_test_data(as_matrix = True)],
-            y = self.data.get_test_labels())
-
-        # save history of eval metrics
-        self.model_history = self.trained_model.history
-
-        # save predictions
-        self.model_predicted_vector = self.model.predict(
-            [self.data.get_test_data_cnn(as_matrix = True), self.data.get_test_data(as_matrix = True)])
-
-        # save predicted classes with argmax
-        self.predicted_classes = np.argmax( self.model_predicted_vector, axis = 1)
-
-        # save confusion matrix
-        self.confusion_matrix = confusion_matrix(
-            self.data.get_test_labels(as_categorical = False), self.predicted_classes)
-
-        # print evaluations
-        self.roc_auc_score = roc_auc_score(self.data.get_test_labels(), self.model_predicted_vector)
-        print("ROC-AUC score: {}".format(self.roc_auc_score))
-
-        if self.eval_metrics:
-            print("model test loss: {}".format(self.model_eval[0]))
-            for im, metric in enumerate(self.eval_metrics):
-                print("model test {}: {}".format(metric, self.model_eval[im+1]))
-	
-	
 	def save_confusionMatrix(self, location, save_roc):
 		''' save confusion matrix as a line in output file '''
 		flattened_matrix = self.confusion_matrix.flatten()
@@ -409,44 +364,39 @@ class CNN_DNN():
 			store.append("data", df, index = False)
 		print("saved confusion matrix at "+str(location))
 
-
-    # --------------------------------------------------------------------
-    # result plotting functions
-    # --------------------------------------------------------------------
-
-	
+	# --------------------------------------------------------------------
+	# result plotting functions
+	# --------------------------------------------------------------------
 
 
+	def plot_metrics(self):
+		''' plot history of loss function and evaluation metrics '''
 
-    def plot_metrics(self):
-        ''' plot history of loss function and evaluation metrics '''
+		metrics = ["loss"]
+		if self.eval_metrics: metrics += self.eval_metrics
 
-        metrics = ["loss"]
-        if self.eval_metrics: metrics += self.eval_metrics
+		for metric in metrics:
+			# model net
+			plt.clf()
+			train_history = self.model_history[metric]
+			val_history = self.model_history["val_"+metric]
 
-        for metric in metrics:
-            # model net
-            plt.clf()
-            train_history = self.model_history[metric]
-            val_history = self.model_history["val_"+metric]
+			n_epochs = len(train_history)
+			epochs = np.arange(1,n_epochs+1,1)
 
-            n_epochs = len(train_history)
-            epochs = np.arange(1,n_epochs+1,1)
+			plt.plot(epochs, train_history, "b-", label = "train", lw = 2)
+			plt.plot(epochs, val_history, "r-", label = "validation", lw = 2)
+			plt.title("train and validation "+str(metric)+" of model")
 
-            plt.plot(epochs, train_history, "b-", label = "train", lw = 2)
-            plt.plot(epochs, val_history, "r-", label = "validation", lw = 2)
-            plt.title("train and validation "+str(metric)+" of model")
+			plt.grid()
+			plt.xlabel("epoch")
+			plt.ylabel(metric)
 
-            plt.grid()
-            plt.xlabel("epoch")
-            plt.ylabel(metric)
+			plt.legend()
 
-            plt.legend()
-
-            out_path = self.save_path + "/modle_history_"+str(metric)+".pdf"
-            plt.savefig(out_path)
-            print("saved plot of "+str(metric)+" at "+str(out_path))
-
+			out_path = self.save_path + "/modle_history_"+str(metric)+".pdf"
+			plt.savefig(out_path)
+			print("saved plot of "+str(metric)+" at "+str(out_path))
 
 	def plot_outputNodes(self, log = False, cut_on_variable = None):
 		''' plot distribution in outputNodes '''
@@ -455,7 +405,7 @@ class CNN_DNN():
 
 		plotNodes = plottingScripts.plotOutputNodes(
 			data                = self.data,
-			prediction_vector   = self.model_prediction_vector,
+			prediction_vector   = self.model_predicted_vector,
 			event_classes       = self.event_classes,
 			nbins               = nbins,
 			bin_range           = bin_range,
@@ -471,13 +421,33 @@ class CNN_DNN():
 
 		plotNodes.set_printROCScore(True)
 		plotNodes.plot(ratio = False)
+		
+		
+	def plot_discriminators(self, log = False):
+		''' plot all events classified as one category '''
+		nbins = 15
+		bin_range = [0.2, 0.7]
 
-	
+		plotDiscrs = plottingScripts.plotDiscriminators(
+			data                = self.data,
+			prediction_vector   = self.model_predicted_vector,
+			event_classes       = self.event_classes,
+			nbins               = nbins,
+			bin_range           = bin_range,
+			signal_class        = "ttHbb",
+			event_category      = self.categoryLabel,
+			plotdir             = self.plot_path,
+			logscale            = log)
+
+		plotDiscrs.set_printROCScore(True)
+		plotDiscrs.plot(ratio = False)
+
+
 	def plot_confusionMatrix(self, norm_matrix = True):
 		''' plot confusion matrix '''
 		plotCM = plottingScripts.plotConfusionMatrix(
 			data                = self.data,
-			prediction_vector   = self.model_prediction_vector,
+			prediction_vector   = self.model_predicted_vector,
 			event_classes       = self.event_classes,
 			event_category      = self.categoryLabel,
 			plotdir             = self.save_path)
@@ -485,70 +455,70 @@ class CNN_DNN():
 		plotCM.set_printROCScore(True)
 
 		plotCM.plot(norm_matrix = norm_matrix)
-	
+
 
 	'''
-    def plot_confusion_matrix(self, savePath = None, norm_matrix = True):
-        # generate confusion matrix 
-        n_classes = self.confusion_matrix.shape[0]
+	def plot_confusion_matrix(self, savePath = None, norm_matrix = True):
+		# generate confusion matrix
+		n_classes = self.confusion_matrix.shape[0]
 
-        # norm confusion matrix if wanted
-        if norm_matrix:
-            cm = np.empty( (n_classes, n_classes), dtype = np.float64 )
-            for yit in range(n_classes):
-                evt_sum = float(sum(self.confusion_matrix[yit,:]))
-                for xit in range(n_classes):
-                    cm[yit,xit] = self.confusion_matrix[yit,xit]/evt_sum
+		# norm confusion matrix if wanted
+		if norm_matrix:
+			cm = np.empty( (n_classes, n_classes), dtype = np.float64 )
+			for yit in range(n_classes):
+				evt_sum = float(sum(self.confusion_matrix[yit,:]))
+				for xit in range(n_classes):
+					cm[yit,xit] = self.confusion_matrix[yit,xit]/evt_sum
 
-            self.confusion_matrix = cm
+			self.confusion_matrix = cm
 
-        plt.clf()
+		plt.clf()
 
-        plt.figure( figsize = [10,10])
+		plt.figure( figsize = [10,10])
 
-        minimum = np.min( self.confusion_matrix )/(np.pi**2.0 * np.exp(1.0)**2.0)
-        maximum = np.max( self.confusion_matrix )*(np.pi**2.0 * np.exp(1.0)**2.0)
+		minimum = np.min( self.confusion_matrix )/(np.pi**2.0 * np.exp(1.0)**2.0)
+		maximum = np.max( self.confusion_matrix )*(np.pi**2.0 * np.exp(1.0)**2.0)
 
-        x = np.arange(0, n_classes+1, 1)
-        y = np.arange(0, n_classes+1, 1)
+		x = np.arange(0, n_classes+1, 1)
+		y = np.arange(0, n_classes+1, 1)
 
-        xn, yn = np.meshgrid(x,y)
+		xn, yn = np.meshgrid(x,y)
 
-        plt.pcolormesh(xn, yn, self.confusion_matrix,
-            norm = LogNorm( vmin = max(minimum, 1e-6), vmax = min(maximum,1.)), cmap="jet")
-        plt.colorbar()
+		plt.pcolormesh(xn, yn, self.confusion_matrix,
+			norm = LogNorm( vmin = max(minimum, 1e-6), vmax = min(maximum,1.)), cmap="jet")
+		plt.colorbar()
 
-        plt.xlim(0, n_classes)
-        plt.ylim(0, n_classes)
+		plt.xlim(0, n_classes)
+		plt.ylim(0, n_classes)
 
-        plt.xlabel("Predicted")
-        plt.ylabel("True")
-        plt.title("ROC-AUC value: {:.4f}".format(self.main_roc_score), loc = "left")
+		plt.xlabel("Predicted")
+		plt.ylabel("True")
+		plt.title("ROC-AUC value: {:.4f}".format(self.main_roc_score), loc = "left")
 
-        # add textlabel
-        for yit in range(n_classes):
-            for xit in range(n_classes):
-                plt.text(
-                    xit+0.5, yit+0.5,
-                    "{:.3f}".format(self.confusion_matrix[yit, xit]),
-                    horizontalalignment = "center",
-                    verticalalignment = "center")
+		# add textlabel
+		for yit in range(n_classes):
+			for xit in range(n_classes):
+				plt.text(
+					xit+0.5, yit+0.5,
+					"{:.3f}".format(self.confusion_matrix[yit, xit]),
+					horizontalalignment = "center",
+					verticalalignment = "center")
 
-        plt_axis = plt.gca()
-        plt_axis.set_xticks(np.arange( (x.shape[0] -1)) + 0.5, minor = False )
-        plt_axis.set_yticks(np.arange( (y.shape[0] -1)) + 0.5, minor = False )
+		plt_axis = plt.gca()
+		plt_axis.set_xticks(np.arange( (x.shape[0] -1)) + 0.5, minor = False )
+		plt_axis.set_yticks(np.arange( (y.shape[0] -1)) + 0.5, minor = False )
 
-        plt_axis.set_xticklabels(self.data.classes)
-        plt_axis.set_yticklabels(self.data.classes)
+		plt_axis.set_xticklabels(self.data.classes)
+		plt_axis.set_yticklabels(self.data.classes)
 
-        plt_axis.set_aspect("equal")
+		plt_axis.set_aspect("equal")
 
-        if savePath == None:
-            out_path = self.save_path + "/confusion_matrix.pdf"
-        else:
-            out_path = savePath
-            
-        plt.savefig(out_path)
-        print("saved confusion matrix at "+str(out_path))
-        plt.clf()
+		if savePath == None:
+			out_path = self.save_path + "/confusion_matrix.pdf"
+		else:
+			out_path = savePath
+
+		plt.savefig(out_path)
+		print("saved confusion matrix at "+str(out_path))
+		plt.clf()
 	'''

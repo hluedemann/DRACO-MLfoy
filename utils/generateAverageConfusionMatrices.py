@@ -16,9 +16,8 @@ JTcategory  = sys.argv[1]
 
 event_classes = ["ttHbb", "ttbb", "tt2b", "ttb", "ttcc", "ttlf"]
 
-cmdir = basedir+"/workdir/confusionMatrixData/"
-inPath1 = cmdir+"/topVariablesLoose_"+str(JTcategory)+".h5"
-inPath2 = cmdir+"/topVariablesTight_"+str(JTcategory)+".h5"
+cmdir = basedir+"/workdir/confusionMatrixData"
+inPath = cmdir+"/normalDNN_"+str(JTcategory)+"_wie_aachen_.h5"
 names = ["loose variable selection", "tight variable selection"]
 
 # generate confusion matrix variable list
@@ -69,17 +68,13 @@ def plot_matrix(cm, cm_std, roc, roc_std, savedir, name, norm = True):
     setup.printTitle(canvas, name)
     setup.saveCanvas(canvas, savedir)
 
-# generate average matrix for first 
-cm1, cm_std1, roc1, roc_std1 = get_average_conf_matrix(inPath1, labels, nclasses = len(event_classes))
-savename = cmdir+"/confusionMatrix_{}_{}.pdf".format("loose", JTcategory)
-plot_matrix(cm1, cm_std1, roc1, roc_std1, savename, name = names[0])
 
 # generate average matrix for second
-cm2, cm_std2, roc2, roc_std2 = get_average_conf_matrix(inPath2, labels, nclasses = len(event_classes))
+cm2, cm_std2, roc2, roc_std2 = get_average_conf_matrix(inPath, labels, nclasses = len(event_classes))
 savename = cmdir+"/confusionMatrix_{}_{}.pdf".format("tight", JTcategory)
 plot_matrix(cm2, cm_std2, roc2, roc_std2, savename, name = names[1])
 
-
+'''
 def get_diff_matrix(cm2, cm1, std2, std1):
     cm2, std2 = norm_matrix(cm2, std2)
     cm1, std1 = norm_matrix(cm1, std1)
@@ -102,3 +97,4 @@ diff_roc_std = np.sqrt(roc_std2**2 + roc_std1**2)
 name = "difference (tight-loose)"
 savename = cmdir+"/confusionMatrix_{}_{}.pdf".format("difference", JTcategory)
 plot_matrix(diff_cm, diff_cm_std, diff_roc, diff_roc_std, savename, name = name, norm = False)
+'''

@@ -4,7 +4,7 @@ import glob
 import miniAOD_preprocessing as preproc
 
 # !!! adjustable options !!!
-basedir = "/nfs/dust/cms/user/vdlinden/DRACO-MLfoy/workdir/miniAOD_files/"
+basedir = "/nfs/dust/cms/user/luedeman/DRACO-MLfoy/workdir/miniAOD_files/"
 data_type = "cnn_map" # unused option but needs to be set
 test_run = False
 

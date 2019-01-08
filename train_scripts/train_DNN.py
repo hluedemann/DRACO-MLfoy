@@ -11,6 +11,11 @@ sys.path.append(basedir)
 import DRACO_Frameworks.DNN.DNN as DNN
 import variable_sets.topVariables_T as variable_set
 
+import keras
+import keras.models as models
+import keras.layers as layer
+from keras import backend as K
+
 JTcategory      = sys.argv[1]
 variables       = variable_set.variables[JTcategory]
 
@@ -20,7 +25,7 @@ workpath = "/ceph/hluedemann/DRACO-MLfoy/workdir"
 inPath = workpath + "/train_samples"
 savepath = workpath + "/DNN_"+str(JTcategory)+"/"
 
-cmatrix_file = workpath+"/confusionMatrixData/topVariablesTight_"+str(JTcategory)+".h5"
+cmatrix_file = workpath+"/confusionMatrixData/normalDNN_"+str(JTcategory)+".h5"
 
 if not os.path.exists(os.path.dirname(cmatrix_file)):
     os.makedirs(os.path.dirname(cmatrix_file))
@@ -36,23 +41,22 @@ dnn = DNN.DNN(
     eval_metrics    = ["acc"],
     test_percentage = 0.2)
 
-dnn.build_model()
-dnn.train_model()
-dnn.eval_model()
-dnn.plot_metrics()
 
-dnn.plot_discriminators()
+num_runs = 15
+
+for i in range(num_runs):
+
+	print("######### RUN: {} ########".format(i))
+
+	dnn.build_model()
+	dnn.train_model()
+	dnn.eval_model()
+
+	# plotting 
+	dnn.plot_metrics()
+	dnn.plot_discriminators()
+	dnn.save_confusionMatrix(location = cmatrix_file, save_roc = True)
+	dnn.plot_confusionMatrix(norm_matrix = True)
+	dnn.plot_outputNodes()
 
 
-#dnn.get_input_weights()
-#dnn.plot_metrics()
-
-# plotting 
-dnn.save_confusionMatrix(location = cmatrix_file, save_roc = True)
-dnn.plot_confusionMatrix(norm_matrix = True)
-
-dnn.plot_outputNodes()
-
-
-#dnn.plot_output_output_correlation(plot=True)
-#dnn.plot_input_output_correlation(plot=False)
