@@ -29,9 +29,9 @@ event_classes = ["ttHbb", "ttbb", "tt2b", "ttb", "ttcc", "ttlf"]
 
 workpath = "/ceph/hluedemann/DRACO-MLfoy/workdir"
 inPath = workpath + "/train_samples"
-savepath = workpath + "/CNN_"+str(JTcategory)+""
+savepath = workpath + "/CNN_2_"+str(JTcategory)+""
 
-cmatrix_file = workpath+"/confusionMatrixData/topVariablesTight_"+str(JTcategory)+".h5"
+cmatrix_file = workpath+"/confusionMatrixData/CNN_"+str(JTcategory)+".h5"
 
 cnn = CNN.CNN(
     in_path             = inPath,
@@ -39,7 +39,7 @@ cnn = CNN.CNN(
     event_classes       = event_classes,
     event_category      = JTcategory,
     train_variables     = variables,
-    train_epochs        = 1,
+    train_epochs        = 10,
     early_stopping      = 5,
     optimizer           = "adam",
     test_percentage     = 0.2,
@@ -125,7 +125,7 @@ cnn.eval_model()
 cnn.plot_metrics()
 cnn.plot_discriminators()
 
-# plotting 
+# plotting
 cnn.save_confusionMatrix(location = cmatrix_file, save_roc = True)
 cnn.plot_confusionMatrix(norm_matrix = True)
 
@@ -133,7 +133,3 @@ cnn.plot_outputNodes()
 
 #cnn.plot_output_output_correlation(plot=True)
 #cnn.plot_input_output_correlation(plot=False)
-
-
-
-

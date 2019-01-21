@@ -2,6 +2,9 @@
 import os
 import sys
 
+import matplotlib
+matplotlib.use('Agg')
+
 # local imports
 filedir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(filedir)
@@ -19,7 +22,7 @@ workpath = "/ceph/hluedemann/DRACO-MLfoy/workdir"
 inPath = workpath + "/train_samples"
 savepath = workpath + "/CNN_DNN_"+str(JTcategory)+""
 
-cmatrix_file = workpath+"/confusionMatrixData/topVariablesTight_"+str(JTcategory)+".h5"
+cmatrix_file = workpath+"/confusionMatrixData/CNN_DNN_"+str(JTcategory)+".h5"
 
 
 cnn_dnn = CNN_DNN.CNN_DNN(
@@ -29,14 +32,14 @@ cnn_dnn = CNN_DNN.CNN_DNN(
     event_category      = JTcategory,
     train_variables     = variables,
     batch_size          = 5000,
-    train_epochs        = 1,
+    train_epochs        = 10,
     early_stopping      = 5,
     optimizer           = "adam",
     test_percentage     = 0.5,
     eval_metrics        = ["acc"],
-    phi_padding         = 10
+    phi_padding         = 0
     )
-    
+
 
 
 '''
@@ -79,34 +82,17 @@ mergedModel = models.Model([modelCNN.input, modelDNN.input], out)
 '''
 
 
-cnn_dnn.build_model()
+num_runs = 10
 
-cnn_dnn.train_models()
+for i in range(num_runs):
 
-cnn_dnn.eval_model()
+    cnn_dnn.build_model()
+    cnn_dnn.train_models()
+    cnn_dnn.eval_model()
+    cnn_dnn.plot_metrics()
+    cnn_dnn.plot_discriminators()
 
-
-cnn_dnn.plot_metrics()
-
-cnn_dnn.plot_discriminators()
-
-
-# plotting 
-cnn_dnn.save_confusionMatrix(location = cmatrix_file, save_roc = True)
-cnn_dnn.plot_confusionMatrix(norm_matrix = True)
-
-cnn_dnn.plot_outputNodes()
-
-
-#dnn.plot_output_output_correlation(plot=True)
-#dnn.plot_input_output_correlation(plot=False)
-
-'''
-cnn_dnn.plot_prenet_nodes()
-cnn_dnn.plot_class_differences()
-cnn_dnn.plot_discriminators()
-cnn_dnn.plot_classification()
-
-cnn_dnn.plot_output_output_correlation(plot=True)
-cnn_dnn.plot_input_output_correlation(plot=False)
-'''
+    # plotting
+    cnn_dnn.save_confusionMatrix(location = cmatrix_file, save_roc = True)
+    cnn_dnn.plot_confusionMatrix(norm_matrix = True)
+    cnn_dnn.plot_outputNodes()

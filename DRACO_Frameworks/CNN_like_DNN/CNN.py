@@ -99,7 +99,7 @@ class CNN():
 		# list of classes
 		self.event_classes = event_classes
 		# name of event category (usually nJet/nTag category)
-		
+
 		self.JTstring       = event_category
 		self.event_category = JTcut.getJTstring(event_category)
 		self.categoryLabel  = JTcut.getJTlabel(event_category)
@@ -138,7 +138,7 @@ class CNN():
 		out_file = out_path+"/variable_norm.csv"
 		#self.data.norm_csv.to_csv(out_file)
 		print("saved variable norms at "+str(out_file))
-		
+
 		# make plotdir
 		self.plot_path = self.save_path+"/plots/"
 		if not os.path.exists(self.plot_path):
@@ -213,10 +213,44 @@ class CNN():
 
 	def build_default_model(self):
 		''' default Aachen-DNN model as used in the analysis '''
+		'''
 		model = models.Sequential()
 
 		# CONV -> RELU -> POOL
 		model.add(Conv2D(32, (3, 3), padding="same", input_shape = self.data.size_input_image))
+		model.add(Activation("relu"))
+		model.add(AveragePooling2D(pool_size=(2,2)))
+
+		model.add(Conv2D(64, (3, 3), padding="same"))
+		model.add(Activation("relu"))
+		model.add(AveragePooling2D(pool_size=(2, 2)))
+
+		# model.add(Conv2D(16, (10, 10), padding="same"))
+		# model.add(Activation("relu"))
+		# model.add(AveragePooling2D(pool_size=(4, 4)))
+
+		model.add(Conv2D(128, (6, 6), padding="same"))
+		model.add(Activation("relu"))
+		model.add(AveragePooling2D(pool_size=(2, 2)))
+
+		model.add(Conv2D(256, (6, 6), padding="same"))
+		model.add(Activation("relu"))
+		model.add(AveragePooling2D(pool_size=(2, 2)))
+
+		model.add(Flatten())
+		model.add(Dense(256))
+		model.add(Activation("relu"))
+		#model.add(BatchNormalization())
+		# softmax classifier
+		model.add(Dense(self.data.n_output_neurons))
+		model.add(Activation("softmax"))
+		return model
+		'''
+
+		model = models.Sequential()
+
+		# CONV -> RELU -> POOL
+		model.add(Conv2D(32, (2, 2), padding="same", input_shape = self.data.size_input_image))
 		model.add(Activation("relu"))
 		model.add(AveragePooling2D(pool_size=(2,2)))
 
@@ -225,18 +259,22 @@ class CNN():
 		model.add(Conv2D(64, (3, 3), padding="same"))
 		model.add(Activation("relu"))
 		model.add(AveragePooling2D(pool_size=(2, 2)))
-		model.add(Conv2D(128, (3, 3), padding="same"))
+
+		model.add(Conv2D(128, (4, 4), padding="same"))
 		model.add(Activation("relu"))
 		model.add(AveragePooling2D(pool_size=(2, 2)))
 
 		# first (and only) set of FC => RELU layers
 		model.add(Flatten())
+		model.add(Dense(128))
+		model.add(Activation("relu"))
 		model.add(Dense(256))
 		model.add(Activation("relu"))
 		#model.add(BatchNormalization())
 		# softmax classifier
 		model.add(Dense(self.data.n_output_neurons))
 		model.add(Activation("softmax"))
+
 		return model
 
 
@@ -415,8 +453,8 @@ class CNN():
 
 		plotNodes.set_printROCScore(True)
 		plotNodes.plot(ratio = False)
-		
-		
+
+
 	def plot_discriminators(self, log = False):
 		''' plot all events classified as one category '''
 		nbins = 15
@@ -453,7 +491,7 @@ class CNN():
 
 	'''
 	def plot_confusion_matrix(self, norm_matrix = True):
-		#generate confusion matrix 
+		#generate confusion matrix
 		n_classes = self.confusion_matrix.shape[0]
 
 		# norm confusion matrix if wanted
@@ -512,5 +550,3 @@ class CNN():
 		print("saved confusion matrix at "+str(out_path))
 		plt.clf()
 	'''
-
-

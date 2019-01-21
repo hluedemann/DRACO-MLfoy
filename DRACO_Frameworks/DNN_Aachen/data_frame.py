@@ -148,6 +148,9 @@ class DataFrame(object):
     def get_prenet_test_labels(self, as_matrix = True):
         return self.df_test[ self.prenet_targets ].values
 
+    def get_class_flag(self, class_label):
+        return pd.Series( [1 if c==class_label else 0 for c in self.df_test["class_label"].values], index = self.df_test.index ).values
+        
     def get_ttH_flag(self):
         return self.df_test["is_ttH"].values
 

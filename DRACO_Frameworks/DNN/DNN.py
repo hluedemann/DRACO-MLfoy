@@ -21,11 +21,16 @@ import keras
 import keras.models as models
 import keras.layers as layer
 from keras import backend as K
+
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import pandas as pd
 
 # Limit gpu usage
 import tensorflow as tf
+
+
 
 config = tf.ConfigProto()
 config.gpu_options.allow_growth = True
@@ -416,9 +421,9 @@ class DNN():
                 print("{:50s}: {}".format(key, val))
                 f.write("{},{}\n".format(key,val))
         print("wrote variable ranking to "+str(rank_path))
-            
-        
-            
+
+
+
 
     def plot_metrics(self):
         ''' plot history of loss function and evaluation metrics '''
@@ -658,6 +663,3 @@ class DNN():
         plotCM.set_printROCScore(True)
 
         plotCM.plot(norm_matrix = norm_matrix)
-
-
-

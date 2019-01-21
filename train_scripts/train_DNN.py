@@ -3,6 +3,9 @@
 import os
 import sys
 
+import matplotlib
+matplotlib.use('Agg')
+
 # local imports
 filedir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(filedir)
@@ -25,7 +28,7 @@ workpath = "/ceph/hluedemann/DRACO-MLfoy/workdir"
 inPath = workpath + "/train_samples"
 savepath = workpath + "/DNN_"+str(JTcategory)+"/"
 
-cmatrix_file = workpath+"/confusionMatrixData/normalDNN_"+str(JTcategory)+".h5"
+cmatrix_file = workpath+"/confusionMatrixData/normalDNN_2_"+str(JTcategory)+".h5"
 
 if not os.path.exists(os.path.dirname(cmatrix_file)):
     os.makedirs(os.path.dirname(cmatrix_file))
@@ -52,11 +55,9 @@ for i in range(num_runs):
 	dnn.train_model()
 	dnn.eval_model()
 
-	# plotting 
+	# plotting
 	dnn.plot_metrics()
 	dnn.plot_discriminators()
 	dnn.save_confusionMatrix(location = cmatrix_file, save_roc = True)
 	dnn.plot_confusionMatrix(norm_matrix = True)
 	dnn.plot_outputNodes()
-
-

@@ -17,7 +17,7 @@ JTcategory  = sys.argv[1]
 event_classes = ["ttHbb", "ttbb", "tt2b", "ttb", "ttcc", "ttlf"]
 
 cmdir = basedir+"/workdir/confusionMatrixData"
-inPath = cmdir+"/normalDNN_"+str(JTcategory)+"_wie_aachen_.h5"
+inPath = cmdir+"/CNN_DNN_"+str(JTcategory)+".h5"
 names = ["loose variable selection", "tight variable selection"]
 
 # generate confusion matrix variable list
@@ -37,7 +37,7 @@ def get_average_conf_matrix(path, labels, nclasses):
 
     roc_mean = df["ROC"].mean()
     roc_std = df["ROC"].std()
-    
+
     return average_matrix, stddevs, roc_mean, roc_std
 
 def norm_matrix(cm, cm_std):
@@ -56,10 +56,10 @@ def plot_matrix(cm, cm_std, roc, roc_std, savedir, name, norm = True):
         cm, cm_std = norm_matrix(cm, cm_std)
 
     hist = setup.setup2DHistogram(
-        matrix   = cm.T, 
-        ncls     = len(event_classes), 
-        xtitle   = "predicted class", 
-        ytitle   = "true class", 
+        matrix   = cm.T,
+        ncls     = len(event_classes),
+        xtitle   = "predicted class",
+        ytitle   = "true class",
         binlabel = event_classes,
         errors   = cm_std)
 
@@ -87,7 +87,7 @@ def get_diff_matrix(cm2, cm1, std2, std1):
             std[xit,yit] = np.sqrt( std2[xit,yit]**2 + std1[xit,yit]**2 )
 
     return diff, std
-        
+
 
 
 # generate difference matrix

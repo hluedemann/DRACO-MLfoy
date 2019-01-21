@@ -2,6 +2,9 @@
 import os
 import sys
 
+import matplotlib
+matplotlib.use('Agg')
+
 # local imports
 filedir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.dirname(filedir)
@@ -19,7 +22,7 @@ workpath = "/ceph/hluedemann/DRACO-MLfoy/workdir"
 inPath = workpath + "/train_samples"
 savepath = workpath + "/CNN_DNN_PRE_"+str(JTcategory)+""
 
-cmatrix_file = workpath+"/confusionMatrixData/topVariablesTight_"+str(JTcategory)+".h5"
+cmatrix_file = workpath+"/confusionMatrixData/CNN_DNN_PRE_"+str(JTcategory)+".h5"
 
 
 cnn_dnn_pre = CNN_DNN_PRE.CNN_DNN_PRE(
@@ -29,7 +32,7 @@ cnn_dnn_pre = CNN_DNN_PRE.CNN_DNN_PRE(
     event_category      = JTcategory,
     train_variables     = variables,
     batch_size          = 5000,
-    train_epochs        = 1,
+    train_epochs        = 15,
     early_stopping      = 5,
     optimizer           = "adam",
     test_percentage     = 0.5,
@@ -38,20 +41,24 @@ cnn_dnn_pre = CNN_DNN_PRE.CNN_DNN_PRE(
     )
 
 
-cnn_dnn_pre.build_model()
+number_runs = 10
 
-cnn_dnn_pre.train_models()
+for i in range(number_runs):
 
-cnn_dnn_pre.eval_model()
-cnn_dnn_pre.plot_metrics()
-cnn_dnn_pre.plot_discriminators()
+    cnn_dnn_pre.build_model()
 
-# plotting 
-cnn_dnn_pre.save_confusionMatrix(location = cmatrix_file, save_roc = True)
-cnn_dnn_pre.plot_confusionMatrix(norm_matrix = True)
+    cnn_dnn_pre.train_models()
+
+    cnn_dnn_pre.eval_model()
+    cnn_dnn_pre.plot_metrics()
+    cnn_dnn_pre.plot_discriminators()
+
+    # plotting
+    cnn_dnn_pre.save_confusionMatrix(location = cmatrix_file, save_roc = True)
+    cnn_dnn_pre.plot_confusionMatrix(norm_matrix = True)
 
 
-cnn_dnn_pre.plot_outputNodes()
+    cnn_dnn_pre.plot_outputNodes()
 
 
 

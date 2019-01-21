@@ -30,6 +30,8 @@ from keras.layers.core import Flatten
 from keras.layers.core import Dropout
 from keras.layers.core import Dense
 
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import pandas as pd
 
@@ -76,7 +78,7 @@ class CNN_DNN():
 				event_category,
 				train_variables,
 				batch_size = 5000,
-				train_epochs = 500,
+				train_epochs = 15,
 				early_stopping = 10,
 				optimizer = None,
 				loss_function = "categorical_crossentropy",
@@ -212,27 +214,23 @@ class CNN_DNN():
 		''' default Aachen-DNN model as used in the analysis '''
 		modelCNN = models.Sequential()
 
-		modelCNN.add(Conv2D(32, (6, 6), padding="same", input_shape = self.data.size_input_image))
+		modelCNN.add(Conv2D(32, (3, 3), padding="same", input_shape = self.data.size_input_image))
 		modelCNN.add(Activation("relu"))
 		modelCNN.add(AveragePooling2D(pool_size=(2,2)))
 
-		modelCNN.add(Conv2D(64, (6, 6), padding="same"))
+		modelCNN.add(Conv2D(64, (3, 3), padding="same"))
 		modelCNN.add(Activation("relu"))
 		modelCNN.add(AveragePooling2D(pool_size=(2, 2)))
-		modelCNN.add(Conv2D(128, (6, 6), padding="same"))
+		modelCNN.add(Conv2D(128, (8, 8), padding="same"))
+		modelCNN.add(Activation("relu"))
+		modelCNN.add(AveragePooling2D(pool_size=(2, 2)))
+		modelCNN.add(Conv2D(128, (8, 8), padding="same"))
 		modelCNN.add(Activation("relu"))
 		modelCNN.add(AveragePooling2D(pool_size=(2, 2)))
 		modelCNN.add(Flatten())
 
 		modelDNN = models.Sequential()
 		modelDNN.add(Dense(100, input_shape = (self.data.n_input_neurons,)))
-
-		# modelDNN.add(Activation("relu"))
-		# modelDNN.add(Dropout(0.5))
-		# modelDNN.add(Dense(100))
-		# modelDNN.add(Activation("relu"))
-		# modelDNN.add(Dropout(0.5))
-
 
 		mergedOutput = layer.Concatenate()([modelCNN.output, modelDNN.output])
 
