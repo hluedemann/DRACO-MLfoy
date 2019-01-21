@@ -6,6 +6,7 @@ import numpy as np
 # dictionary for colors
 def GetPlotColor( cls ):
     color_dict = {
+        "ttZ":   ROOT.kBlue+4,
         "ttH":   ROOT.kBlue+1,
         "ttlf":  ROOT.kRed-7,
         "ttcc":  ROOT.kRed+1,
@@ -23,12 +24,12 @@ def GetyTitle():
     return "Events expected"
 
 def setupHistogram(
-        values, weights, 
+        values, weights,
         nbins, bin_range, color,
         xtitle, ytitle, filled = True):
     # define histogram
     histogram = ROOT.TH1D(xtitle.replace(" ","_"), "", nbins, *bin_range)
-    histogram.Sumw2(True)    
+    histogram.Sumw2(True)
 
     for v, w in zip(values, weights):
         histogram.Fill(v, w)
@@ -53,7 +54,7 @@ def setupHistogram(
     else:
         histogram.SetLineColor( color )
         histogram.SetFillColor(0)
-        histogram.SetLineWidth(1)
+        histogram.SetLineWidth(2)
 
     return histogram
 
@@ -61,12 +62,12 @@ def setup2DHistogram(matrix, ncls, xtitle, ytitle, binlabel, errors = None):
     # check if errors for matrix are given
     has_errors = isinstance(errors, np.ndarray)
     print(has_errors)
-    
+
     # init histogram
     cm = ROOT.TH2D("2Dhistogram", "", ncls, 0, ncls, ncls, 0, ncls)
     cm.SetStats(False)
     ROOT.gStyle.SetPaintTextFormat(".3f")
-        
+
 
     for xit in range(cm.GetNbinsX()):
         for yit in range(cm.GetNbinsY()):
@@ -104,10 +105,11 @@ def draw2DHistOnCanvas(hist, canvasName, catLabel, ROC = None, ROCerr = None):
 
     # draw histogram
     #ROOT.gStyle.SetPalette(69)
-    if ROCerr:
-        hist.DrawCopy("colz text1e")
-    else:
-        hist.DrawCopy("colz text1")
+
+    draw_option = "colz text1"
+    if ROCerr: draw_option += "e"
+    hist.DrawCopy(draw_option)
+
 
     # setup TLatex
     latex = ROOT.TLatex()
@@ -127,10 +129,10 @@ def draw2DHistOnCanvas(hist, canvasName, catLabel, ROC = None, ROCerr = None):
         if ROCerr:
             text += "#pm {:.3f}".format(ROCerr)
         latex.DrawLatex(l+0.47,1.-t+0.01, text)
-    
+
     return canvas
 
-    
+
 
 def drawHistsOnCanvas(sigHists, bkgHists, plotOptions, canvasName):
     if not isinstance(sigHists, list):
@@ -143,7 +145,7 @@ def drawHistsOnCanvas(sigHists, bkgHists, plotOptions, canvasName):
         moveOverUnderFlow(h)
     for h in sigHists:
         moveOverUnderFlow(h)
-    
+
     # stack Histograms
     bkgHists = [bkgHists[len(bkgHists)-1-i] for i in range(len(bkgHists))]
     for i in range(len(bkgHists)-1, 0, -1):
@@ -157,7 +159,7 @@ def drawHistsOnCanvas(sigHists, bkgHists, plotOptions, canvasName):
         yMax = max(h.GetBinContent(h.GetMaximumBin()), yMax)
         if h.GetBinContent(h.GetMaximumBin()) > 0:
             yMinMax = min(h.GetBinContent(h.GetMaximumBin()), yMinMax)
-    
+
     # draw the first histogram
     firstHist = bkgHists[0]
     if plotOptions["logscale"]:
@@ -186,12 +188,12 @@ def drawHistsOnCanvas(sigHists, bkgHists, plotOptions, canvasName):
     # redraw axis
     firstHist.DrawCopy("axissame")
 
-    
+
     # draw signal histograms
     for sH in sigHists:
         # draw signal histogram
-        sH.DrawCopy(option+"same")
-    
+        sH.DrawCopy(option+" E0 same")
+
     errorGraph.Draw("same")
 
     if plotOptions["ratio"]:
@@ -229,7 +231,7 @@ def drawHistsOnCanvas(sigHists, bkgHists, plotOptions, canvasName):
             ratioPlot.DrawCopy("sameP")
         canvas.cd(1)
     return canvas
-    
+
 
 def getCanvas(name, ratiopad = False):
     if ratiopad:
@@ -288,8 +290,8 @@ def getLegend():
 
 
 
-def printLumi(pad, ratio = False):
-    lumi_text = "41.5 fb^{-1} (13 TeV)"
+def printLumi(pad, lumi = 41.5, ratio = False):
+    lumi_text = str(lumi)+" fb^{-1} (13 TeV)"
 
     pad.cd(1)
     l = pad.GetLeftMargin()
@@ -300,7 +302,7 @@ def printLumi(pad, ratio = False):
     latex = ROOT.TLatex()
     latex.SetNDC()
     latex.SetTextColor(ROOT.kBlack)
-    
+
     if ratio:   latex.DrawLatex(l+0.60,1.-t+0.04,lumi_text)
     else:       latex.DrawLatex(l+0.53,1.-t+0.02,lumi_text)
 
@@ -324,7 +326,7 @@ def printROCScore(pad, ROC, ratio = False):
     t = pad.GetTopMargin()
     r = pad.GetRightMargin()
     b = pad.GetBottomMargin()
-    
+
     text = "ROC-AUC = {:.3f}".format(ROC)
 
     latex = ROOT.TLatex()

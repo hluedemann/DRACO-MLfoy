@@ -23,8 +23,6 @@ or \
 
 
 # define other additional selections
-ttH_selection = "(Evt_Odd == 1)"
-
 ttbar_selection = "(\
 abs(Weight_scale_variation_muR_0p5_muF_0p5) <= 100 and \
 abs(Weight_scale_variation_muR_0p5_muF_1p0) <= 100 and \
@@ -37,10 +35,11 @@ abs(Weight_scale_variation_muR_2p0_muF_1p0) <= 100 and \
 abs(Weight_scale_variation_muR_2p0_muF_2p0) <= 100 \
 )"
 
+ttH_selection = "(Evt_Odd == 1)"
 
 # define output classes
 ttH_categories = root2pandas.EventCategories()
-ttH_categories.addCategory("ttH", selection = None)
+ttH_categories.addCategory("ttHbb", selection = None)
 
 ttbar_categories = root2pandas.EventCategories()
 ttbar_categories.addCategory("ttbb", selection = "(GenEvt_I_TTPlusBB == 3 and GenEvt_I_TTPlusCC == 0)")
@@ -52,8 +51,8 @@ ttbar_categories.addCategory("ttcc", selection = "(GenEvt_I_TTPlusBB == 0 and Ge
 
 # initialize dataset class
 dataset = root2pandas.Dataset(
-    outputdir   = "/nfs/dust/cms/user/vdlinden/MLfoy/workdir/DNNInputFiles/",
-    naming      = "_dnn",
+    outputdir   = "/nfs/dust/cms/user/vdlinden/DNNInputFiles/DNN_ttH_2017/",
+    naming      = "_dnn_newJEC",
     addCNNmap   = False,
     addMEM      = True)
 
@@ -61,55 +60,52 @@ dataset = root2pandas.Dataset(
 dataset.addBaseSelection(base_selection)
 
 
-
-
-
+ntuplesPath = "/nfs/dust/cms/user/kelmorab/ttH_2018/ntuples_forDNN_v4/"
+memPath = "/nfs/dust/cms/user/vdlinden/MEM_2017/"
 
 
 # add samples to dataset
 dataset.addSample(
     sampleName  = "ttHbb",
-    ntuples     = "/nfs/dust/cms/user/kelmorab/ttH_2018/ntuples_forDNN_v4/ttHTobb_M125_TuneCP5_13TeV-powheg-pythia8_new_pmx/*nominal*.root",
+    ntuples     = ntuplesPath+"/ttHTobb_M125_TuneCP5_13TeV-powheg-pythia8_new_pmx/*nominal*.root",
     categories  = ttH_categories,
     selections  = ttH_selection,
-    MEMs        = "/nfs/dust/cms/user/vdlinden/MEM_2017/ttHTobb_M125_TuneCP5_13TeV-powheg-pythia8_MEM/*.root",
+    MEMs        = memPath+"/ttHTobb_M125_TuneCP5_13TeV-powheg-pythia8_MEM/*.root",
     CNNmaps     = "/nfs/dust/cms/user/vdlinden/DRACO-MLfoy/workdir/miniAOD_files/CNN_files/ttHbb.h5")
     
 dataset.addSample(
     sampleName  = "ttHNobb",
-    ntuples     = "/nfs/dust/cms/user/kelmorab/ttH_2018/ntuples_forDNN_v4/ttHToNonbb_M125_TuneCP5_13TeV-powheg-pythia8_new_pmx/*nominal*.root",
+    ntuples     = ntuplesPath+"/ttHToNonbb_M125_TuneCP5_13TeV-powheg-pythia8_new_pmx/*nominal*.root",
     categories  = ttH_categories,
     selections  = ttH_selection,
-    MEMs        = "/nfs/dust/cms/user/vdlinden/MEM_2017/ttHToNonbb_M125_TuneCP5_13TeV-powheg-pythia8/*.root",
+    MEMs        = memPath+"/ttHToNonbb_M125_TuneCP5_13TeV-powheg-pythia8/*.root",
     CNNmaps     = "/nfs/dust/cms/user/vdlinden/DRACO-MLfoy/workdir/miniAOD_files/CNN_files/ttHNobb.h5")
 
 
 
 dataset.addSample(
     sampleName  = "TTToSL",
-    ntuples     = "/nfs/dust/cms/user/kelmorab/ttH_2018/ntuples_forDNN_v4/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_new_pmx/*nominal*.root",
+    ntuples     = ntuplesPath+"/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_new_pmx/*nominal*.root",
     categories  = ttbar_categories,
     selections  = ttbar_selection,
-    MEMs        = "/nfs/dust/cms/user/vdlinden/MEM_2017/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_MEM/*.root",
+    MEMs        = memPath+"/TTToSemiLeptonic_TuneCP5_13TeV-powheg-pythia8_MEM/*.root",
     CNNmaps     = "/nfs/dust/cms/user/vdlinden/DRACO-MLfoy/workdir/miniAOD_files/CNN_files/TTToSL.h5")
 
 dataset.addSample(
     sampleName  = "TTToHad",
-    ntuples     = "/nfs/dust/cms/user/kelmorab/ttH_2018/ntuples_forDNN_v4/TTToHadronic_TuneCP5_13TeV-powheg-pythia8_new_pmx/*nominal*.root",
+    ntuples     = ntuplesPath+"/TTToHadronic_TuneCP5_13TeV-powheg-pythia8_new_pmx/*nominal*.root",
     categories  = ttbar_categories,
     selections  = ttbar_selection,
-    MEMs        = "/nfs/dust/cms/user/vdlinden/MEM_2017/TTToHadronic_TuneCP5_13TeV-powheg-pythia8_MEM/*.root",
+    MEMs        = memPath+"/TTToHadronic_TuneCP5_13TeV-powheg-pythia8_MEM/*.root",
     CNNmaps     = "/nfs/dust/cms/user/vdlinden/DRACO-MLfoy/workdir/miniAOD_files/CNN_files/TTToHad.h5")
 
 dataset.addSample(
     sampleName  = "TTToLep",
-    ntuples     = "/nfs/dust/cms/user/kelmorab/ttH_2018/ntuples_forDNN_v4/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_new_pmx/*nominal*.root",
+    ntuples     = ntuplesPath+"/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_new_pmx/*nominal*.root",
     categories  = ttbar_categories,
     selections  = ttbar_selection,
-    MEMs        = "/nfs/dust/cms/user/vdlinden/MEM_2017/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_MEM/*.root",
+    MEMs        = memPath+"/TTTo2L2Nu_TuneCP5_13TeV-powheg-pythia8_MEM/*.root",
     CNNmaps     = "/nfs/dust/cms/user/vdlinden/DRACO-MLfoy/workdir/miniAOD_files/CNN_files/TTToLep.h5")
-
-
 
 # initialize variable list 
 dataset.addVariables(variable_set.all_variables)
@@ -118,22 +114,22 @@ dataset.addVariables(variable_set.all_variables)
 additional_variables = [
     "N_Jets",
     "N_BTagsM",
-    "GenAdd_BB_inacceptance_part",
-    "GenAdd_B_inacceptance_part",
-    "GenHiggs_BB_inacceptance_part",
-    "GenHiggs_B_inacceptance_part",
-    "GenTopHad_B_inacceptance_part",
-    "GenTopHad_QQ_inacceptance_part",
-    "GenTopHad_Q_inacceptance_part",
-    "GenTopLep_B_inacceptance_part",
-    "GenAdd_BB_inacceptance_jet",
-    "GenAdd_B_inacceptance_jet",
-    "GenHiggs_BB_inacceptance_jet",
-    "GenHiggs_B_inacceptance_jet",
-    "GenTopHad_B_inacceptance_jet",
-    "GenTopHad_QQ_inacceptance_jet",
-    "GenTopHad_Q_inacceptance_jet",
-    "GenTopLep_B_inacceptance_jet",
+    #"GenAdd_BB_inacceptance_part",
+    #"GenAdd_B_inacceptance_part",
+    #"GenHiggs_BB_inacceptance_part",
+    #"GenHiggs_B_inacceptance_part",
+    #"GenTopHad_B_inacceptance_part",
+    #"GenTopHad_QQ_inacceptance_part",
+    #"GenTopHad_Q_inacceptance_part",
+    #"GenTopLep_B_inacceptance_part",
+    #"GenAdd_BB_inacceptance_jet",
+    #"GenAdd_B_inacceptance_jet",
+    #"GenHiggs_BB_inacceptance_jet",
+    #"GenHiggs_B_inacceptance_jet",
+    #"GenTopHad_B_inacceptance_jet",
+    #"GenTopHad_QQ_inacceptance_jet",
+    #"GenTopHad_Q_inacceptance_jet",
+    #"GenTopLep_B_inacceptance_jet",
     "Weight_XS",
     "Weight_CSV",
     "Weight_GEN_nom",
